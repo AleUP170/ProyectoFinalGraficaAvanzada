@@ -417,8 +417,78 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 			break;
 		}
 	}
-}
 
+	
+}
+void GamePadLogic() {
+	int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
+	std::cout << present << std::endl;
+	if (present == 1) {
+
+		int axisCount;
+		const float *axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
+		/*std::cout << "number of axis " << axisCount << std::endl;
+		if (axes[0] != 0) {
+			std::cout << "left stick x Axis" << axes[0] << std::endl;
+		}
+		if (axes[1] != 0) {
+			std::cout << "left stick y Axis" << axes[1] << std::endl;
+		}
+		if (axes[2] != 0) {
+			std::cout << "Right stick x Axis" << axes[2] << std::endl;
+		}
+		if (axes[3] != 0) {
+			std::cout << "Right stick y Axis" << axes[5] << std::endl;
+		}if (axes[4] != 0) {
+			std::cout << "L2" << axes[3] << std::endl;
+		}
+		if (axes[5] != 0) {
+			std::cout << "R2" << axes[4] << std::endl;
+		}*/
+
+
+		int buttonCount;
+		const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1,&buttonCount);
+		if (GLFW_PRESS == buttons[1]) {
+			std::cout << "X button pressed" << buttons[1] << std::endl;
+		}
+		else if (GLFW_RELEASE == buttons[1]) {
+			std::cout << "X button released" << buttons[1] << std::endl;
+		}
+		if (GLFW_PRESS == buttons[0]) {
+			std::cout << "Square button pressed" << buttons[0] << std::endl;
+		}
+		else if (GLFW_RELEASE == buttons[0]) {
+			std::cout << "Square button released" << buttons[0] << std::endl;
+		}
+		if (GLFW_PRESS == buttons[3]) {
+			std::cout << "Triangle button pressed" << buttons[3] << std::endl;
+		}
+		else if (GLFW_RELEASE == buttons[3]) {
+			std::cout << "Triangle button released" << buttons[3] << std::endl;
+		}
+		if (GLFW_PRESS == buttons[2]) {
+			std::cout << "circle button pressed" << buttons[2] << std::endl;
+		}
+		else if (GLFW_RELEASE == buttons[2]) {
+			std::cout << "circle button released" << buttons[2] << std::endl;
+		}
+
+		if (GLFW_PRESS == buttons[4]) {
+			std::cout << "L! button pressed" << buttons[4] << std::endl;
+		}
+		else if (GLFW_RELEASE == buttons[4]) {
+			std::cout << "L! button released" << buttons[4] << std::endl;
+		}
+		if (GLFW_PRESS == buttons[5]) {
+			std::cout << "R1 button pressed" << buttons[5] << std::endl;
+		}
+		else if (GLFW_RELEASE == buttons[5]) {
+			std::cout << "R1 button released" << buttons[5] << std::endl;
+		}
+
+	}
+}
 void mouseCallback(GLFWwindow *window, double xpos, double ypos) {
 
 	offsetX = xpos - lastMousePosX;
@@ -458,6 +528,7 @@ bool processInput(bool continueApplication) {
 	return continueApplication;
 }
 void applicationLoop() {
+	
 	bool psi = true;
 
 	glm::mat4 view;
@@ -476,7 +547,7 @@ void applicationLoop() {
 		TimeManager::Instance().CalculateFrameRate(true);
 		deltaTime = TimeManager::Instance().DeltaTime;
 		psi = processInput(true);
-
+		GamePadLogic();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glm::mat4 projection = glm::perspective(glm::radians(45.0f),
