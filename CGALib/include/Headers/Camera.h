@@ -102,10 +102,17 @@ public:
 	float getAngleTarget() {
 		return this->angleTarget;
 	}
+	float getAngleAroundTarget() {
+		return this->angleAroundTarget;
+	}
 
 	void setDistanceFromTarget(float distanceFromTarget) {
 		this->distanceFromTarget = distanceFromTarget;
 	}
+	void setPitch(float degrees) {
+		this->pitch = glm::radians(degrees);
+	}
+
 
 protected:
 	glm::vec3 position;
