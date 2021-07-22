@@ -1,0 +1,13 @@
+Control PS4
+X but = 	(button[1])
+Square = 	(button[0])
+Triangle = 	(button[3])
+circle =     	(buttons[2])
+L1 = 		(button[4])
+R1 = 		(button[5])
+L2 =    	(axes[4] -1 1 suelto presionado)
+R2 = 		(axes[5] -1 1 suelto presionado)
+Joystick R X =  (Axes[0]  -1 0 1, izq,centro,der)
+Joystick R y = 	(axes[1] -1 0 1, arriba,centro,abajo)
+Joystick L x =  (axes[0] -1 0 1, izq,centro,der)
+Joystick L Y =  (axes[1] -1 0 1, arriba centro abajo)

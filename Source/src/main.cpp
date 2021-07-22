@@ -54,6 +54,19 @@ Shader shaderMulLighting;
 //Shader para el terreno
 Shader shaderTerrain;
 
+//	Modelos
+Model modelRaccoon;
+
+
+
+///Matrices Modelos
+glm::mat4 modelMatrixRaccoon = glm::mat4(1.0f);
+
+
+
+//variables player
+float speed = 1.0f;
+
 std::shared_ptr<Camera> camera(new ThirdPersonCamera());
 
 Sphere skyboxSphere(20, 20);
@@ -84,7 +97,7 @@ bool exitApp = false;
 int lastMousePosX, offsetX = 0;
 int lastMousePosY, offsetY = 0;
 
-glm::mat4 cameraTransform = glm::mat4(1.0f);
+
 
 double deltaTime;
 double currTime, lastTime;
@@ -101,6 +114,14 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void init(int width, int height, std::string strTitle, bool bFullScreen);
 void destroy();
 bool processInput(bool continueApplication = true);
+
+
+void LoadModels() {
+	modelRaccoon.loadModel("../Assets/Models/Racoon/Racoon.fbx");
+	modelRaccoon.setShader(&shaderMulLighting);
+
+
+}
 
 // Implementacion de todas las funciones.
 void init(int width, int height, std::string strTitle, bool bFullScreen) {
@@ -167,14 +188,15 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	skyboxSphere.setShader(&shaderSkybox);
 	skyboxSphere.setScale(glm::vec3(20.0f, 20.0f, 20.0f));
 
+	LoadModels();
+
 	terrain.init();
 	terrain.setShader(&shaderTerrain);
 	terrain.setPosition(glm::vec3(100, 0, 100));
 
-	camera->setPosition(glm::vec3(0.0, 3.0, 0.0));
 	camera->setSensitivity(1.0);
 	camera->setDistanceFromTarget(distanceFromTarget);
-	camera->setCameraTarget(glm::vec3(0, 3, 1));
+	camera->setCameraTarget(modelMatrixRaccoon[3]);
 	camera->updateCamera();
 
 	// Definimos el tamanio de la imagen
@@ -371,6 +393,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	textureTerrainBlendMap.freeImage(bitmap);
 
 }
+void DestroyModels() {
+	modelRaccoon.destroy();
+}
 
 void destroy() {
 	glfwDestroyWindow(window);
@@ -398,10 +423,12 @@ void destroy() {
 	glDeleteTextures(1, &textureTerrainBID);
 	glDeleteTextures(1, &textureTerrainBlendMapID);
 
+	DestroyModels();
 	// Cube Maps Delete
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	glDeleteTextures(1, &skyboxTextureID);
 }
+
 
 void reshapeCallback(GLFWwindow *Window, int widthRes, int heightRes) {
 	screenWidth = widthRes;
@@ -422,31 +449,47 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 }
 void GamePadLogic() {
 	int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
-	std::cout << present << std::endl;
 	if (present == 1) {
-
+		glm::mat4 cameraTransform = glm::mat4(1.0f);
+		cameraTransform[3] = glm::vec4(camera->getPosition(),1);
+		
+		glm::mat4 inv = glm::inverse(cameraTransform);
+		inv = glm::rotate(inv, camera->getAngleAroundTarget(), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec3 cameraForward = glm::normalize(glm::vec3(inv[2]));
+		glm::vec3 x_axis = glm::cross(cameraForward,glm::vec3(0,1,0));
 		int axisCount;
 		const float *axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
-		/*std::cout << "number of axis " << axisCount << std::endl;
-		if (axes[0] != 0) {
-			std::cout << "left stick x Axis" << axes[0] << std::endl;
-		}
-		if (axes[1] != 0) {
-			std::cout << "left stick y Axis" << axes[1] << std::endl;
-		}
-		if (axes[2] != 0) {
-			std::cout << "Right stick x Axis" << axes[2] << std::endl;
-		}
-		if (axes[3] != 0) {
-			std::cout << "Right stick y Axis" << axes[5] << std::endl;
-		}if (axes[4] != 0) {
-			std::cout << "L2" << axes[3] << std::endl;
-		}
-		if (axes[5] != 0) {
-			std::cout << "R2" << axes[4] << std::endl;
-		}*/
+		
+		//Left stick X
+		if (axes[0] >= 0.1 || axes[0] <= -0.1) {
+			modelMatrixRaccoon = glm::translate(modelMatrixRaccoon, x_axis * axes[0] * speed);
 
+		}
+		//Left stick Y
+		if (axes[1] >= 0.1 || axes[1] <= -0.1) {
+			
+			modelMatrixRaccoon = glm::translate(modelMatrixRaccoon, cameraForward * axes[1] * speed *-1.0f);
 
+		}
+		//Right stick X
+		if (axes[2] >= 0.1 || axes[2] <= -0.1) {
+			camera->mouseMoveCamera(axes[2],0, deltaTime);
+
+		}
+		//Right stick Y
+		if (axes[5] >= 0.1 || axes[5] <= -0.1) {
+			camera->mouseMoveCamera(0,axes[5], deltaTime);
+		}
+		//L2
+		if (axes[3] != -1) {
+
+		}
+		//R2
+		if (axes[4] != -1) {
+
+		}
+
+		/*
 		int buttonCount;
 		const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1,&buttonCount);
 		if (GLFW_PRESS == buttons[1]) {
@@ -486,6 +529,7 @@ void GamePadLogic() {
 		else if (GLFW_RELEASE == buttons[5]) {
 			std::cout << "R1 button released" << buttons[5] << std::endl;
 		}
+		*/
 
 	}
 }
@@ -527,6 +571,15 @@ bool processInput(bool continueApplication) {
 	glfwPollEvents();
 	return continueApplication;
 }
+
+void DrawModels() {
+	modelMatrixRaccoon[3][1] = terrain.getHeightTerrain(modelMatrixRaccoon[3][0], modelMatrixRaccoon[3][2]);
+	glm::mat4 matrixRac = glm::scale(modelMatrixRaccoon,glm::vec3(.0005f,.0005f,.0005f));
+	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 0, 1));
+	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 1, 0));
+	std::cout << "raccon position" << modelMatrixRaccoon[3].x << "," << modelMatrixRaccoon[3].y << "," << modelMatrixRaccoon[3].z << std::endl;
+	modelRaccoon.render(matrixRac);
+}
 void applicationLoop() {
 	
 	bool psi = true;
@@ -553,6 +606,8 @@ void applicationLoop() {
 		glm::mat4 projection = glm::perspective(glm::radians(45.0f),
 			(float)screenWidth / (float)screenHeight, 0.01f, 100.0f);
 
+		camera->setCameraTarget(modelMatrixRaccoon[3]);
+		camera->updateCamera();
 		view = camera->getViewMatrix();
 
 
@@ -576,34 +631,36 @@ void applicationLoop() {
 		shaderTerrain.setMatrix4("view", 1, false,
 			glm::value_ptr(view));
 
+		
+
 		/*******************************************
 		 * Propiedades Luz direccional
 		 *******************************************/
 		shaderMulLighting.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
-		shaderMulLighting.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
-		shaderMulLighting.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(0.7, 0.7, 0.7)));
-		shaderMulLighting.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(0.9, 0.9, 0.9)));
-		shaderMulLighting.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(-1.0, 0.0, 0.0)));
+		shaderMulLighting.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(1, 1, 1)));
+		shaderMulLighting.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(1, 1, 1)));
+		shaderMulLighting.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(1, 1, 1)));
+		shaderMulLighting.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(0, -1.0, 0.0)));
 		/*******************************************
 		 * Propiedades Luz direccional Terrain
 		 *******************************************/
 		shaderTerrain.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
-		shaderTerrain.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
-		shaderTerrain.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(0.7, 0.7, 0.7)));
-		shaderTerrain.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(0.9, 0.9, 0.9)));
-		shaderTerrain.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(-1.0, 0.0, 0.0)));
+		shaderTerrain.setVectorFloat3("directionalLight.light.ambient", glm::value_ptr(glm::vec3(1, 1, 1)));
+		shaderTerrain.setVectorFloat3("directionalLight.light.diffuse", glm::value_ptr(glm::vec3(1, 1, 1)));
+		shaderTerrain.setVectorFloat3("directionalLight.light.specular", glm::value_ptr(glm::vec3(1, 1, 1)));
+		shaderTerrain.setVectorFloat3("directionalLight.direction", glm::value_ptr(glm::vec3(0, -1.0, 0.0)));
 		
 		/*******************************************
 		 * Propiedades SpotLights
 		 *******************************************/
-		shaderMulLighting.setInt("spotLightCount", 1);
-		shaderTerrain.setInt("spotLightCount", 1);
+		shaderMulLighting.setInt("spotLightCount", 0);
+		shaderTerrain.setInt("spotLightCount", 0);
 		
 		/*******************************************
 		 * Propiedades PointLights
 		 *******************************************/
-		shaderMulLighting.setInt("pointLightCount", 1);
-		shaderTerrain.setInt("pointLightCount",1);
+		shaderMulLighting.setInt("pointLightCount", 0);
+		shaderTerrain.setInt("pointLightCount",0);
 
 
 		/*******************************************
@@ -655,6 +712,8 @@ void applicationLoop() {
 		glCullFace(oldCullFaceMode);
 		glDepthFunc(oldDepthFuncMode);
 
+
+		DrawModels();
 
 		glfwSwapBuffers(window);
 	}
