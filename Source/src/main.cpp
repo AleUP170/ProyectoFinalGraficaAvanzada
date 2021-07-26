@@ -7,6 +7,9 @@
 #include <string>
 #include <iostream>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
+
 //glfw include
 #include <GLFW/glfw3.h>
 
@@ -40,6 +43,19 @@
 #include "Headers/AnimationUtils.h"
 
 #define ARRAY_SIZE_IN_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
+class GameObject {
+public:
+	Model model;
+	glm::mat4 transform = glm::mat4(1.0f);
+	bool active = true;
+	std::string modelLocation;
+	std::string parentName;
+
+	GameObject(std::string locationModel) {
+		this->modelLocation = locationModel;
+	}
+
+};
 
 class Controller {
 public:
@@ -77,19 +93,14 @@ Shader shaderTerrain;
 
 //Mapeo controles
 std::map<std::string, Controller> mapasControles{
-	{ "PS4", Controller(2, 5, 0, 1, 0, 2) },
-	{ "Xbox", Controller(2, 5, 0, 1, 0, 2) }
+	{ "PS4", Controller(2, 5, 0, 1, 1, 2) },
+	{ "Xbox", Controller(2, 5, 0, 1, 1, 2) }
 };
 
 //	Modelos
-Model modelRaccoon;
-
-
-
-///Matrices Modelos
-glm::mat4 modelMatrixRaccoon = glm::mat4(1.0f);
-
-
+std::map<std::string, GameObject> modelos {
+	{"Raccoon",GameObject("../Assets/Models/Racoon/Racoon.fbx")}
+};
 
 //variables player
 float speed = 1.0f;
@@ -149,8 +160,13 @@ bool processInput(bool continueApplication = true);
 
 
 void LoadModels() {
-	modelRaccoon.loadModel("../Assets/Models/Racoon/Racoon.fbx");
-	modelRaccoon.setShader(&shaderMulLighting);
+	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
+	{
+		it->second.model.loadModel(it->second.modelLocation);
+		it->second.model.setShader(&shaderMulLighting);
+		it->second.model.setOrientation(glm::vec3(1.0f));
+
+	}
 
 
 }
@@ -228,7 +244,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	camera->setSensitivity(1.0);
 	camera->setDistanceFromTarget(distanceFromTarget);
-	camera->setCameraTarget(modelMatrixRaccoon[3]);
+	camera->setCameraTarget(modelos.at("Raccoon").transform[3]);
 	camera->updateCamera();
 
 	// Definimos el tamanio de la imagen
@@ -426,7 +442,10 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 }
 void DestroyModels() {
-	modelRaccoon.destroy();
+	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
+	{
+		it->second.model.destroy();
+	}
 }
 
 void destroy() {
@@ -483,7 +502,7 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 void SetJumpVariables() {
 	std::cout << "Set jump Variables" << std::endl;
 	std::cout << "time Jump = " << TimeManager::Instance().GetTime() << std::endl;
-	heightTerrainJump = terrain.getHeightTerrain(modelMatrixRaccoon[3][0], modelMatrixRaccoon[3][2]);
+	heightTerrainJump = terrain.getHeightTerrain(modelos.at("Raccoon").transform[3][0] , modelos.at("Raccoon").transform[3][2]);
 	timeJump = TimeManager::Instance().GetTime();
 	isJumping = true;
 }
@@ -503,29 +522,34 @@ void GamePadLogic() {
 		const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
 
 		Controller currentController;
-		if (glfwGetJoystickName(GLFW_JOYSTICK_1) == "Wireless Controller" && buttonCount ==  18)
+		if (glfwGetJoystickName(GLFW_JOYSTICK_1) == "Wireless Controller" && buttonCount == 18) {
 			currentController = mapasControles.at("PS4");
-		else
+			//std::cout << "PS4 " << std::endl;
+		}
+		else {
 			currentController = mapasControles.at("Xbox");
+			//std::cout << "xbox " << std::endl;
+		}
+		
 		//Left stick X
 		if (axes[currentController.joystickL_X] >= 0.1 || axes[currentController.joystickL_X] <= -0.1) {
-			modelMatrixRaccoon = glm::translate(modelMatrixRaccoon, x_axis * axes[0] * speed);
+			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, x_axis * axes[currentController.joystickL_X] * speed);
 
 		}
 		//Left stick Y
 		if (axes[currentController.joystickL_Y] >= 0.1 || axes[currentController.joystickL_Y] <= -0.1) {
 			
-			modelMatrixRaccoon = glm::translate(modelMatrixRaccoon, cameraForward * axes[1] * speed *-1.0f);
+			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, cameraForward * axes[currentController.joystickL_Y] * speed *-1.0f);
 
 		}
 		//Right stick X
 		if (axes[currentController.joystickR_X] >= 0.1 || axes[currentController.joystickR_X] <= -0.1) {
-			camera->mouseMoveCamera(axes[2],0, deltaTime);
+			camera->mouseMoveCamera(axes[currentController.joystickR_X],0, deltaTime);
 
 		}
 		//Right stick Y
 		if (axes[currentController.joystickR_Y] >= 0.1 || axes[currentController.joystickR_Y] <= -0.1) {
-			camera->mouseMoveCamera(0,axes[5], deltaTime);
+			camera->mouseMoveCamera(0,axes[currentController.joystickR_Y], deltaTime);
 		}
 		//L2
 		if (axes[3] != -1) {
@@ -535,7 +559,7 @@ void GamePadLogic() {
 		if (axes[4] != -1) {
 
 		}
-		if (GLFW_PRESS == buttons[1]) {
+		if (GLFW_PRESS == buttons[currentController.but_A]) {
 			if(!isJumping)
 				SetJumpVariables();
 			//std::cout << "X button pressed" << buttons[1] << std::endl;
@@ -633,13 +657,14 @@ float tiroParabolico(float currentTerrainHeight) {
 }
 
 void DrawModels() {
-	float terrainHeight = terrain.getHeightTerrain(modelMatrixRaccoon[3][0], modelMatrixRaccoon[3][2]);
-	modelMatrixRaccoon[3][1] = tiroParabolico(terrainHeight);
-	glm::mat4 matrixRac = glm::scale(modelMatrixRaccoon,glm::vec3(.0005f,.0005f,.0005f));
+	float terrainHeight = terrain.getHeightTerrain(modelos.at("Raccoon").transform[3][0], modelos.at("Raccoon").transform[3][2]);
+	modelos.at("Raccoon").transform[3][1] = tiroParabolico(terrainHeight);
+	glm::mat4 matrixRac = glm::scale(modelos.at("Raccoon").transform,glm::vec3(.0005f,.0005f,.0005f));
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 0, 1));
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 1, 0));
-	//std::cout << "raccon position" << modelMatrixRaccoon[3].x << "," << modelMatrixRaccoon[3].y << "," << modelMatrixRaccoon[3].z << std::endl;
-	modelRaccoon.render(matrixRac);
+
+	//std::cout << glm::to_string(matrixRac) << std::endl;
+	modelos.at("Raccoon").model.render(matrixRac);
 }
 void applicationLoop() {
 	
@@ -667,7 +692,7 @@ void applicationLoop() {
 		glm::mat4 projection = glm::perspective(glm::radians(45.0f),
 			(float)screenWidth / (float)screenHeight, 0.01f, 100.0f);
 
-		camera->setCameraTarget(modelMatrixRaccoon[3]);
+		camera->setCameraTarget(modelos.at("Raccoon").transform[3]);
 		camera->updateCamera();
 		view = camera->getViewMatrix();
 
