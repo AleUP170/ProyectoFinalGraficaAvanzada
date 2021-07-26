@@ -41,6 +41,27 @@
 
 #define ARRAY_SIZE_IN_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
 
+class Controller {
+public:
+	int joystickR_X;
+	int joystickR_Y;
+	int joystickL_X;
+	int joystickL_Y;
+	int but_A;
+	int but_B;
+	Controller() {
+
+	}
+	Controller(int jR_X,int jR_Y,int jL_X,int jL_y,int butt_A, int butt_b) {
+		this->joystickR_X = jR_X;
+		this->joystickR_Y = jR_Y;
+		this->joystickL_X = jL_X;
+		this->joystickL_Y = jL_y;
+		this->but_A = butt_A;
+		this->but_B = butt_b;
+	}
+};
+
 int screenWidth;
 int screenHeight;
 
@@ -54,6 +75,12 @@ Shader shaderMulLighting;
 //Shader para el terreno
 Shader shaderTerrain;
 
+//Mapeo controles
+std::map<std::string, Controller> mapasControles{
+	{ "PS4", Controller(2, 5, 0, 1, 0, 2) },
+	{ "Xbox", Controller(2, 5, 0, 1, 0, 2) }
+};
+
 //	Modelos
 Model modelRaccoon;
 
@@ -66,6 +93,11 @@ glm::mat4 modelMatrixRaccoon = glm::mat4(1.0f);
 
 //variables player
 float speed = 1.0f;
+bool isJumping = false;
+float heightTerrainJump = 0.0f;
+float verticalSpeedJump = 10.0f;
+double timeJump = 0.0f;
+float gravity = 9.81f;
 
 std::shared_ptr<Camera> camera(new ThirdPersonCamera());
 
@@ -447,6 +479,14 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 
 	
 }
+
+void SetJumpVariables() {
+	std::cout << "Set jump Variables" << std::endl;
+	std::cout << "time Jump = " << TimeManager::Instance().GetTime() << std::endl;
+	heightTerrainJump = terrain.getHeightTerrain(modelMatrixRaccoon[3][0], modelMatrixRaccoon[3][2]);
+	timeJump = TimeManager::Instance().GetTime();
+	isJumping = true;
+}
 void GamePadLogic() {
 	int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
 	if (present == 1) {
@@ -459,25 +499,32 @@ void GamePadLogic() {
 		glm::vec3 x_axis = glm::cross(cameraForward,glm::vec3(0,1,0));
 		int axisCount;
 		const float *axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
-		
+		int buttonCount;
+		const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
+
+		Controller currentController;
+		if (glfwGetJoystickName(GLFW_JOYSTICK_1) == "Wireless Controller" && buttonCount ==  18)
+			currentController = mapasControles.at("PS4");
+		else
+			currentController = mapasControles.at("Xbox");
 		//Left stick X
-		if (axes[0] >= 0.1 || axes[0] <= -0.1) {
+		if (axes[currentController.joystickL_X] >= 0.1 || axes[currentController.joystickL_X] <= -0.1) {
 			modelMatrixRaccoon = glm::translate(modelMatrixRaccoon, x_axis * axes[0] * speed);
 
 		}
 		//Left stick Y
-		if (axes[1] >= 0.1 || axes[1] <= -0.1) {
+		if (axes[currentController.joystickL_Y] >= 0.1 || axes[currentController.joystickL_Y] <= -0.1) {
 			
 			modelMatrixRaccoon = glm::translate(modelMatrixRaccoon, cameraForward * axes[1] * speed *-1.0f);
 
 		}
 		//Right stick X
-		if (axes[2] >= 0.1 || axes[2] <= -0.1) {
+		if (axes[currentController.joystickR_X] >= 0.1 || axes[currentController.joystickR_X] <= -0.1) {
 			camera->mouseMoveCamera(axes[2],0, deltaTime);
 
 		}
 		//Right stick Y
-		if (axes[5] >= 0.1 || axes[5] <= -0.1) {
+		if (axes[currentController.joystickR_Y] >= 0.1 || axes[currentController.joystickR_Y] <= -0.1) {
 			camera->mouseMoveCamera(0,axes[5], deltaTime);
 		}
 		//L2
@@ -488,48 +535,46 @@ void GamePadLogic() {
 		if (axes[4] != -1) {
 
 		}
-
-		/*
-		int buttonCount;
-		const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1,&buttonCount);
 		if (GLFW_PRESS == buttons[1]) {
-			std::cout << "X button pressed" << buttons[1] << std::endl;
+			if(!isJumping)
+				SetJumpVariables();
+			//std::cout << "X button pressed" << buttons[1] << std::endl;
 		}
 		else if (GLFW_RELEASE == buttons[1]) {
-			std::cout << "X button released" << buttons[1] << std::endl;
+			//std::cout << "X button released" << buttons[1] << std::endl;
 		}
 		if (GLFW_PRESS == buttons[0]) {
-			std::cout << "Square button pressed" << buttons[0] << std::endl;
+			//std::cout << "Square button pressed" << buttons[0] << std::endl;
 		}
 		else if (GLFW_RELEASE == buttons[0]) {
-			std::cout << "Square button released" << buttons[0] << std::endl;
+			//std::cout << "Square button released" << buttons[0] << std::endl;
 		}
 		if (GLFW_PRESS == buttons[3]) {
-			std::cout << "Triangle button pressed" << buttons[3] << std::endl;
+			//std::cout << "Triangle button pressed" << buttons[3] << std::endl;
 		}
 		else if (GLFW_RELEASE == buttons[3]) {
-			std::cout << "Triangle button released" << buttons[3] << std::endl;
+			//std::cout << "Triangle button released" << buttons[3] << std::endl;
 		}
 		if (GLFW_PRESS == buttons[2]) {
-			std::cout << "circle button pressed" << buttons[2] << std::endl;
+			//std::cout << "circle button pressed" << buttons[2] << std::endl;
 		}
 		else if (GLFW_RELEASE == buttons[2]) {
-			std::cout << "circle button released" << buttons[2] << std::endl;
+			//std::cout << "circle button released" << buttons[2] << std::endl;
 		}
 
 		if (GLFW_PRESS == buttons[4]) {
-			std::cout << "L! button pressed" << buttons[4] << std::endl;
+			//std::cout << "L! button pressed" << buttons[4] << std::endl;
 		}
 		else if (GLFW_RELEASE == buttons[4]) {
-			std::cout << "L! button released" << buttons[4] << std::endl;
+			//std::cout << "L! button released" << buttons[4] << std::endl;
 		}
 		if (GLFW_PRESS == buttons[5]) {
-			std::cout << "R1 button pressed" << buttons[5] << std::endl;
+			//std::cout << "R1 button pressed" << buttons[5] << std::endl;
 		}
 		else if (GLFW_RELEASE == buttons[5]) {
-			std::cout << "R1 button released" << buttons[5] << std::endl;
+			//std::cout << "R1 button released" << buttons[5] << std::endl;
 		}
-		*/
+		
 
 	}
 }
@@ -572,12 +617,28 @@ bool processInput(bool continueApplication) {
 	return continueApplication;
 }
 
+float tiroParabolico(float currentTerrainHeight) {
+	if (isJumping) {
+		std::cout << "is jumping " << std::endl;
+		double t = TimeManager::Instance().GetTime() - timeJump;
+		std::cout << "time start jump" << timeJump << " deltaTime " << t <<std::endl;
+		float yPos = heightTerrainJump + (verticalSpeedJump * (float) t) - (0.5f * gravity *(float) t * (float)t);
+		std::cout << "jump height " << yPos << " terrain Height " << currentTerrainHeight << std::endl;
+		if (yPos > currentTerrainHeight)
+			return yPos;
+		isJumping = false;
+
+	}
+	return currentTerrainHeight;
+}
+
 void DrawModels() {
-	modelMatrixRaccoon[3][1] = terrain.getHeightTerrain(modelMatrixRaccoon[3][0], modelMatrixRaccoon[3][2]);
+	float terrainHeight = terrain.getHeightTerrain(modelMatrixRaccoon[3][0], modelMatrixRaccoon[3][2]);
+	modelMatrixRaccoon[3][1] = tiroParabolico(terrainHeight);
 	glm::mat4 matrixRac = glm::scale(modelMatrixRaccoon,glm::vec3(.0005f,.0005f,.0005f));
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 0, 1));
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 1, 0));
-	std::cout << "raccon position" << modelMatrixRaccoon[3].x << "," << modelMatrixRaccoon[3].y << "," << modelMatrixRaccoon[3].z << std::endl;
+	//std::cout << "raccon position" << modelMatrixRaccoon[3].x << "," << modelMatrixRaccoon[3].y << "," << modelMatrixRaccoon[3].z << std::endl;
 	modelRaccoon.render(matrixRac);
 }
 void applicationLoop() {
