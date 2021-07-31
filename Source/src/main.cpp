@@ -39,6 +39,9 @@
 
 #include "Headers/AnimationUtils.h"
 
+// Include Colision headers functions
+#include "Headers/Colisiones.h"
+
 #define ARRAY_SIZE_IN_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
 
 int screenWidth;
@@ -53,15 +56,23 @@ Shader shaderSkybox;
 Shader shaderMulLighting;
 //Shader para el terreno
 Shader shaderTerrain;
+//Shader para Depth buffer
+Shader shaderDepthTesting;
 
 //	Modelos
 Model modelRaccoon;
 
+//  Modelos frutas
+Model modelPinapp;
+Model modelPera;
+Model modelSandia;
+Model modelCereza;
 
-
-///Matrices Modelos
+//  Matrices Modelos
 glm::mat4 modelMatrixRaccoon = glm::mat4(1.0f);
 
+//  Matrices Modelos
+//  glm::mat4 modelMatrixRock = glm::mat4(1.0f);
 
 
 //variables player
@@ -97,7 +108,17 @@ bool exitApp = false;
 int lastMousePosX, offsetX = 0;
 int lastMousePosY, offsetY = 0;
 
-
+/************************************
+		Posisiones de frutas 
+*************************************/
+//	PIÑA
+std::vector<glm::vec3> pinAppPosition = { glm::vec3(0, 0, 0)};
+//	PERA
+std::vector<glm::vec3> peraPosition = { glm::vec3(1, 0, 0) };
+//	SANDIA
+std::vector<glm::vec3> sandiaPosition = { glm::vec3(0, 0, 0) };
+//	CHERRY
+std::vector<glm::vec3> cerezaPosition = { glm::vec3(-1, 0, 0) };
 
 double deltaTime;
 double currTime, lastTime;
@@ -120,7 +141,19 @@ void LoadModels() {
 	modelRaccoon.loadModel("../Assets/Models/Racoon/Racoon.fbx");
 	modelRaccoon.setShader(&shaderMulLighting);
 
-
+	/******* MODELOS DE FRUTAS ******/
+	//	Modelos de piña
+	modelPinapp.loadModel("../Assets/Models/frutas/Pineapple.fbx");
+	modelPinapp.setShader(&shaderMulLighting);
+	//	Modelos de pera
+	modelPera.loadModel("../Assets/Models/frutas/Pear.fbx");
+	modelPera.setShader(&shaderMulLighting);
+	//	Modelos de sandia
+	modelSandia.loadModel("../Assets/Models/frutas/Watermelon.fbx");
+	modelSandia.setShader(&shaderMulLighting);
+	//	Modelos de cereza
+	modelCereza.loadModel("../Assets/Models/frutas/Cherry.fbx");
+	modelCereza.setShader(&shaderMulLighting);
 }
 
 // Implementacion de todas las funciones.
@@ -182,12 +215,14 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	shaderSkybox.initialize("../Shaders/skyBox.vs", "../Shaders/skyBox.fs");
 	shaderMulLighting.initialize("../Shaders/iluminacion_textura_animation.vs", "../Shaders/multipleLights.fs");
 	shaderTerrain.initialize("../Shaders/terrain.vs", "../Shaders/terrain.fs");
+	shaderDepthTesting.initialize("../Shaders/depthTesting.vs", "../Shaders/depthTesting.fs");
 
 	// Inicializacion de los objetos.
 	skyboxSphere.init();
 	skyboxSphere.setShader(&shaderSkybox);
 	skyboxSphere.setScale(glm::vec3(20.0f, 20.0f, 20.0f));
 
+	// Carga de modelos
 	LoadModels();
 
 	terrain.init();
@@ -412,6 +447,16 @@ void destroy() {
 	// Basic objects Delete
 	skyboxSphere.destroy();
 
+	//Modelos basicos
+	//	FRUTAS
+	modelPinapp.destroy();
+	modelPera.destroy();
+	modelSandia.destroy();
+	modelCereza.destroy();
+
+	// RACOON
+	modelRaccoon.destroy();
+
 	// Terrains objects Delete
 	terrain.destroy();
 
@@ -573,12 +618,45 @@ bool processInput(bool continueApplication) {
 }
 
 void DrawModels() {
+	
+	
 	modelMatrixRaccoon[3][1] = terrain.getHeightTerrain(modelMatrixRaccoon[3][0], modelMatrixRaccoon[3][2]);
-	glm::mat4 matrixRac = glm::scale(modelMatrixRaccoon,glm::vec3(.0005f,.0005f,.0005f));
+	glm::mat4 matrixRac = glm::scale(modelMatrixRaccoon, glm::vec3(.0005f,.0005f,.0005f));
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 0, 1));
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 1, 0));
-	std::cout << "raccon position" << modelMatrixRaccoon[3].x << "," << modelMatrixRaccoon[3].y << "," << modelMatrixRaccoon[3].z << std::endl;
 	modelRaccoon.render(matrixRac);
+
+	//Modelo de la piña
+	for (int i = 0; i < pinAppPosition.size(); i++) {
+		//pinAppPosition[i].y = terrain.getHeightTerrain(pinAppPosition[i].x, pinAppPosition[i].z);
+		modelPinapp.setPosition(pinAppPosition[i]);
+		modelPinapp.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelPinapp.render();
+	}
+
+	//Modelo de pera
+	for (int i = 0; i < peraPosition.size(); i++) {
+		//peraPosition[i].y = terrain.getHeightTerrain(peraPosition[i].x, peraPosition[i].z);
+		modelPera.setPosition(peraPosition[i]);
+		modelPera.setScale(glm::vec3(1.5, 1.5, 1.5));
+		modelPera.render();
+	}
+
+	//Modelo de la sandia
+	for (int i = 0; i < sandiaPosition.size(); i++) {
+		//sandiaPosition[i].y = terrain.getHeightTerrain(sandiaPosition[i].x, sandiaPosition[i].z);
+		modelSandia.setPosition(sandiaPosition[i]);
+		modelSandia.setScale(glm::vec3(2.0, 2.0, 2.0));
+		modelSandia.render();
+	}
+
+	//Modelo de la cereza
+	for (int i = 0; i < cerezaPosition.size(); i++) {
+		//cerezaPosition[i].y = terrain.getHeightTerrain(cerezaPosition[i].x, cerezaPosition[i].z);
+		modelCereza.setPosition(cerezaPosition[i]);
+		modelCereza.setScale(glm::vec3(2.0, 2.0, 2.0));
+		modelCereza.render();
+	}
 }
 void applicationLoop() {
 	

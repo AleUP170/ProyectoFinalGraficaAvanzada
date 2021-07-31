@@ -12,62 +12,65 @@
 #include "AbstractModel.h"
 
 void addOrUpdateColliders(
-		std::map<std::string,
-				std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> > &colliders,
-		std::string name, AbstractModel::OBB collider, glm::mat4 transform) {
+	std::map<std::string,
+	std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >& colliders,
+	std::string name, AbstractModel::OBB collider, glm::mat4 transform) {
 	std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >::iterator it =
-			colliders.find(name);
-	if (it != colliders.end()){
+		colliders.find(name);
+	if (it != colliders.end()) {
 		std::get<0>(it->second) = collider;
 		std::get<2>(it->second) = transform;
-	}else
+	}
+	else
 		colliders[name] = std::make_tuple(collider, glm::mat4(1.0), transform);
 }
 
 void addOrUpdateColliders(
-		std::map<std::string,
-				std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> > &colliders,
-		std::string name) {
+	std::map<std::string,
+	std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >& colliders,
+	std::string name) {
 	std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >::iterator it =
-			colliders.find(name);
+		colliders.find(name);
 	if (it != colliders.end())
 		std::get<1>(it->second) = std::get<2>(it->second);
 }
 
 void addOrUpdateColliders(
-		std::map<std::string,
-				std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> > &colliders,
-		std::string name, AbstractModel::SBB collider, glm::mat4 transform) {
+	std::map<std::string,
+	std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >& colliders,
+	std::string name, AbstractModel::SBB collider, glm::mat4 transform) {
 	std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >::iterator it =
-			colliders.find(name);
-	if (it != colliders.end()){
+		colliders.find(name);
+	if (it != colliders.end()) {
 		std::get<0>(it->second) = collider;
 		std::get<2>(it->second) = transform;
-	}else
+	}
+	else
 		colliders[name] = std::make_tuple(collider, glm::mat4(1.0), transform);
 }
 
 void addOrUpdateColliders(
-		std::map<std::string,
-				std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> > &colliders,
-		std::string name) {
+	std::map<std::string,
+	std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >& colliders,
+	std::string name) {
 	std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >::iterator it =
-			colliders.find(name);
+		colliders.find(name);
 	if (it != colliders.end())
 		std::get<1>(it->second) = std::get<2>(it->second);
 }
 
-void addOrUpdateCollisionDetection(std::map<std::string, bool> &collisionDetector,
-		std::string name, bool isCollision) {
+void addOrUpdateCollisionDetection(std::map<std::string, bool>& collisionDetector,
+	std::string name, bool isCollision) {
 	std::map<std::string, bool>::iterator colIt = collisionDetector.find(name);
-	if(colIt != collisionDetector.end()){
-		if(!colIt->second)
+	if (colIt != collisionDetector.end()) {
+		if (!colIt->second)
 			colIt->second = isCollision;
-	}else
+	}
+	else
 		collisionDetector[name] = isCollision;
 }
 
-bool raySphereIntersect(glm::vec3 orig, glm::vec3 dest, glm::vec3 dir, AbstractModel::SBB sbb, float &t) {
+bool raySphereIntersect(glm::vec3 orig, glm::vec3 dest, glm::vec3 dir, AbstractModel::SBB sbb, float& t) {
 	// Vector del Origen del rayo al centro de la esfera.
 	glm::vec3 vDirToSphere = sbb.c - orig;
 
@@ -107,7 +110,7 @@ bool testSphereSphereIntersection(AbstractModel::SBB sbb1, AbstractModel::SBB sb
 	return false;
 }
 
-bool testSphereOBox(AbstractModel::SBB sbb, AbstractModel::OBB obb){
+bool testSphereOBox(AbstractModel::SBB sbb, AbstractModel::OBB obb) {
 	float d = 0;
 	glm::quat qinv = glm::inverse(obb.u);
 	sbb.c = qinv * glm::vec4(sbb.c, 1.0);
@@ -116,20 +119,20 @@ bool testSphereOBox(AbstractModel::SBB sbb, AbstractModel::OBB obb){
 	aabb.mins = obb.c - obb.e;
 	aabb.maxs = obb.c + obb.e;
 	if (sbb.c[0] >= aabb.mins[0] && sbb.c[0] <= aabb.maxs[0]
-			&& sbb.c[1] >= aabb.mins[1] && sbb.c[1] <= aabb.maxs[1]
-			&& sbb.c[2] >= aabb.mins[2] && sbb.c[2] <= aabb.maxs[2])
+		&& sbb.c[1] >= aabb.mins[1] && sbb.c[1] <= aabb.maxs[1]
+		&& sbb.c[2] >= aabb.mins[2] && sbb.c[2] <= aabb.maxs[2])
 		return true;
-	for (int i = 0; i < 3; i++){
-		if(sbb.c[i] < aabb.mins[i])
+	for (int i = 0; i < 3; i++) {
+		if (sbb.c[i] < aabb.mins[i])
 			d += (sbb.c[i] - aabb.mins[i]) * (sbb.c[i] - aabb.mins[i]);
-		else if(sbb.c[i] > aabb.maxs[i])
+		else if (sbb.c[i] > aabb.maxs[i])
 			d += (sbb.c[i] - aabb.maxs[i]) * (sbb.c[i] - aabb.maxs[i]);
 	}
-	if(d <= sbb.ratio * sbb.ratio)
+	if (d <= sbb.ratio * sbb.ratio)
 		return true;
 	return false;
 }
-bool testOBBOBB(AbstractModel::OBB a, AbstractModel::OBB b){
+bool testOBBOBB(AbstractModel::OBB a, AbstractModel::OBB b) {
 	float EPSILON = 0.0001;
 	float ra, rb;
 	glm::mat3 R = glm::mat4(0.0), AbsR = glm::mat4(0.0);
@@ -165,71 +168,74 @@ bool testOBBOBB(AbstractModel::OBB a, AbstractModel::OBB b){
 	// Test axis L = A0 x B0
 	ra = a.e[1] * AbsR[2][0] + a.e[2] * AbsR[1][0];
 	rb = b.e[1] * AbsR[0][2] + b.e[2] * AbsR[0][1];
-	if(fabs(t[2] * R[1][0] - t[1] * R[2][0]) > ra + rb) return false;
+	if (fabs(t[2] * R[1][0] - t[1] * R[2][0]) > ra + rb) return false;
 
 	// Test axis L = A0 x B1
 	ra = a.e[1] * AbsR[2][1] + a.e[2] * AbsR[1][1];
 	rb = b.e[0] * AbsR[0][2] + b.e[2] * AbsR[0][0];
-	if(fabs(t[2] * R[1][1] - t[1] * R[2][1]) > ra + rb) return false;
+	if (fabs(t[2] * R[1][1] - t[1] * R[2][1]) > ra + rb) return false;
 
 	// Test axis L = A0 x B2
 	ra = a.e[1] * AbsR[2][2] + a.e[2] * AbsR[1][2];
 	rb = b.e[0] * AbsR[0][1] + b.e[1] * AbsR[0][0];
-	if(fabs(t[2] * R[1][2] - t[1] * R[2][2]) > ra + rb) return false;
+	if (fabs(t[2] * R[1][2] - t[1] * R[2][2]) > ra + rb) return false;
 
 	// Test axis L = A1 x B0
 	ra = a.e[0] * AbsR[2][0] + a.e[2] * AbsR[0][0];
 	rb = b.e[1] * AbsR[1][2] + b.e[2] * AbsR[1][1];
-	if(fabs(t[0] * R[2][0] - t[2] * R[0][0]) > ra + rb) return false;
+	if (fabs(t[0] * R[2][0] - t[2] * R[0][0]) > ra + rb) return false;
 
 	// Test axis L = A1 x B1
 	ra = a.e[0] * AbsR[2][1] + a.e[2] * AbsR[0][1];
 	rb = b.e[0] * AbsR[1][2] + b.e[2] * AbsR[1][0];
-	if(fabs(t[0] * R[2][1] - t[2] * R[0][1]) > ra + rb) return false;
+	if (fabs(t[0] * R[2][1] - t[2] * R[0][1]) > ra + rb) return false;
 
 	// Test axis L = A1 x B2
 	ra = a.e[0] * AbsR[2][2] + a.e[2] * AbsR[0][2];
 	rb = b.e[0] * AbsR[1][1] + b.e[1] * AbsR[1][0];
-	if(fabs(t[0] * R[2][2] - t[2] * R[0][2]) > ra + rb) return false;
+	if (fabs(t[0] * R[2][2] - t[2] * R[0][2]) > ra + rb) return false;
 
 	// Test axis L = A2 x B0
 	ra = a.e[0] * AbsR[1][0] + a.e[1] * AbsR[0][0];
 	rb = b.e[1] * AbsR[2][2] + b.e[2] * AbsR[2][1];
-	if(fabs(t[1] * R[0][0] - t[0] * R[1][0]) > ra + rb) return false;
+	if (fabs(t[1] * R[0][0] - t[0] * R[1][0]) > ra + rb) return false;
 
 	// Test axis L = A2 x B1
 	ra = a.e[0] * AbsR[1][1] + a.e[1] * AbsR[0][1];
 	rb = b.e[0] * AbsR[2][2] + b.e[2] * AbsR[2][0];
-	if(fabs(t[1] * R[0][1] - t[0] * R[1][1]) > ra + rb) return false;
+	if (fabs(t[1] * R[0][1] - t[0] * R[1][1]) > ra + rb) return false;
 
 	// Test axis L = A2 x B2
 	ra = a.e[0] * AbsR[1][2] + a.e[1] * AbsR[0][2];
 	rb = b.e[0] * AbsR[2][1] + b.e[1] * AbsR[2][0];
-	if(fabs(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb) return false;
+	if (fabs(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb) return false;
 
 	return true;
 }
 
 bool testSLABPlane(float p, float v, float min, float max, float& tmin, float& tmax) {
-	if (fabs(v) < 0.01)
+	if (fabs(v) < 0.01) {
 		return (p >= min && p <= max);
-	float ood = 1 / v;
+	}
+	float ood = 1.0f / v;
 	float t1 = (min - p) * ood;
-	float t2 = (max- p) * ood;
+	float t2 = (max - p) * ood;
 
 	if (t1 > t2) {
 		float aux = t1;
 		t1 = t2;
 		t2 = aux;
 	}
-
-	if (t1 > tmin)
-		tmin = t1; 
-	if (t2 < tmax)
+	if (t1 > tmin) {
+		tmin = t1;
+	}
+	if (t2 < tmax) {
 		tmax = t2;
-	if (tmin > tmax)
-		return true;
-	return false;
+	}
+	if (tmin > tmax) {
+		return false;
+	}
+	return true;
 }
 
 bool testIntersectRayAABB(glm::vec3 p1, glm::vec3 p2, glm::vec3 v, AbstractModel::AABB aabb) {
@@ -241,24 +247,23 @@ bool testIntersectRayAABB(glm::vec3 p1, glm::vec3 p2, glm::vec3 v, AbstractModel
 	if (!testSLABPlane(p1.z, v.z, aabb.mins.z, aabb.maxs.z, tmin, tmax))
 		return false;
 
-	if (tmin >= 0 && tmin <= glm::distance(p1,p2))
+	if (tmin >= 0 && tmin <= glm::distance(p1, p2))
 		return true;
 
 	return false;
 }
 
-
-bool testIntersectRayAABB(glm::vec3 p1, glm::vec3 p2, glm::vec3 v, AbstractModel::OBB obb) {
+bool testIntersectRayOBB(glm::vec3 p1, glm::vec3 p2, glm::vec3 v, AbstractModel::OBB obb) {
 	glm::quat qinv = glm::inverse(obb.u);
 	p1 = qinv * glm::vec4(p1, 1.0);
-	p1 = qinv * glm::vec4(p2, 1.0);
+	p2 = qinv * glm::vec4(p2, 1.0);
 	v = qinv * glm::vec4(v, 1.0);
 	glm::vec3 ct = qinv * glm::vec4(obb.c, 1.0);
 	AbstractModel::AABB aabb;
 	aabb.mins = ct - obb.e;
-	aabb.maxs = ct - obb.c;
+	aabb.maxs = ct + obb.e;
 
-
+	return testIntersectRayAABB(p1, p2, v, aabb);
 }
 
 #endif /* COLISIONES_H_ */
