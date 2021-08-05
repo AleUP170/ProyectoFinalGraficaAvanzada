@@ -42,7 +42,11 @@
 
 #include "Headers/AnimationUtils.h"
 
+// Include Colision headers functions
+#include "Headers/Colisiones.h"
 #define ARRAY_SIZE_IN_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
+
+enum Tipocolision { noColision, OBBCol, SBBCol };
 class GameObject {
 public:
 	Model model;
@@ -50,9 +54,47 @@ public:
 	bool active = true;
 	std::string modelLocation;
 	std::string parentName;
+	int animation_index = 0;
+	glm::vec3 modelScale = glm::vec3(1.0f);
+	Tipocolision colision = noColision;
+
 
 	GameObject(std::string locationModel) {
 		this->modelLocation = locationModel;
+	}
+	GameObject(std::string locationModel, int animIndex) {
+		this->modelLocation = locationModel;
+		this->animation_index = animIndex;
+	}
+	GameObject(std::string locationModel, int animIndex, glm::vec3 scale) {
+		this->modelLocation = locationModel;
+		this->animation_index = animIndex;
+		this->modelScale = scale;
+	}
+	GameObject(std::string locationModel, glm::vec3 scale) {
+		this->modelLocation = locationModel;
+		this->modelScale = scale;
+	}
+
+	GameObject(std::string locationModel, Tipocolision col) {
+		this->modelLocation = locationModel;
+		this->colision = col;
+	}
+	GameObject(std::string locationModel, int animIndex, Tipocolision col) {
+		this->modelLocation = locationModel;
+		this->animation_index = animIndex;
+		this->colision = col;
+	}
+	GameObject(std::string locationModel, int animIndex, glm::vec3 scale, Tipocolision col) {
+		this->modelLocation = locationModel;
+		this->animation_index = animIndex;
+		this->modelScale = scale;
+		this->colision = col;
+	}
+	GameObject(std::string locationModel, glm::vec3 scale, Tipocolision col) {
+		this->modelLocation = locationModel;
+		this->modelScale = scale;
+		this->colision = col;
 	}
 
 };
@@ -99,7 +141,7 @@ std::map<std::string, Controller> mapasControles{
 
 //	Modelos
 std::map<std::string, GameObject> modelos {
-	{"Raccoon",GameObject("../Assets/Models/Racoon/Racoon.fbx")}
+	{"Raccoon",GameObject("../Assets/Models/Racoon/Racoon.fbx", glm::vec3(.0005f,.0005f,.0005f),SBBCol)}
 };
 
 //variables player
@@ -147,6 +189,14 @@ double currTime, lastTime;
 
 float distanceFromTarget = 10.0;
 
+// Colliders
+std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> > collidersOBB;
+std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> > collidersSBB;
+
+//Render Colliders
+Box boxCollider;
+Sphere sphereCollider(10, 10);
+
 // Se definen todos las funciones.
 void reshapeCallback(GLFWwindow *Window, int widthRes, int heightRes);
 void keyCallback(GLFWwindow *window, int key, int scancode, int action,
@@ -167,7 +217,13 @@ void LoadModels() {
 		it->second.model.setOrientation(glm::vec3(1.0f));
 
 	}
-
+	//Colliders Render
+	boxCollider.init();
+	boxCollider.setShader(&shader);
+	boxCollider.setColor(glm::vec4(1.0f));
+	sphereCollider.init();
+	sphereCollider.setShader(&shader);
+	sphereCollider.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));
 
 }
 
@@ -446,6 +502,10 @@ void DestroyModels() {
 	{
 		it->second.model.destroy();
 	}
+	//Destroy Render Colliders
+	boxCollider.destroy();
+	sphereCollider.destroy();
+
 }
 
 void destroy() {
@@ -655,16 +715,82 @@ float tiroParabolico(float currentTerrainHeight) {
 	}
 	return currentTerrainHeight;
 }
-
+void SetAnimationIndex() {
+	std::map<std::string, GameObject>::iterator it;
+	for (it = modelos.begin(); it != modelos.end(); it++) {
+		it->second.model.setAnimationIndex(it->second.animation_index);
+	}
+}
 void DrawModels() {
+	SetAnimationIndex();
 	float terrainHeight = terrain.getHeightTerrain(modelos.at("Raccoon").transform[3][0], modelos.at("Raccoon").transform[3][2]);
 	modelos.at("Raccoon").transform[3][1] = tiroParabolico(terrainHeight);
-	glm::mat4 matrixRac = glm::scale(modelos.at("Raccoon").transform,glm::vec3(.0005f,.0005f,.0005f));
+	modelos.at("Raccoon").model.setAnimationIndex(modelos.at("Raccoon").animation_index);
+	glm::mat4 matrixRac = glm::scale(modelos.at("Raccoon").transform,modelos.at("Raccoon").modelScale);
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 0, 1));
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 1, 0));
 
 	//std::cout << glm::to_string(matrixRac) << std::endl;
 	modelos.at("Raccoon").model.render(matrixRac);
+
+
+}
+void SetUpColisionMeshes() {
+	std::map<std::string, GameObject>::iterator it;
+	glm::mat4 matrix;
+	AbstractModel::OBB obbCollider;
+	AbstractModel::SBB sbbCollider;
+	for (it = modelos.begin(); it != modelos.end(); it++) {
+		if (it->second.active) {
+			switch (it->second.colision) {
+			case OBBCol:
+				std::cout << "Setting OBB collider for " << it->first << std::endl;
+				matrix = it->second.transform;
+				matrix = glm::scale(matrix, it->second.modelScale);
+				obbCollider.u = glm::quat_cast(it->second.transform);
+				matrix = glm::translate(matrix, it->second.model.getObb().c);
+				obbCollider.c = glm::vec3(matrix[3]);
+				obbCollider.e = it->second.model.getObb().e *it->second.modelScale * 100.0f;
+				addOrUpdateColliders(collidersOBB, it->first, obbCollider, it->second.transform);
+				break;
+			case SBBCol:
+				std::cout << "Setting SBB collider for " << it->first << std::endl;
+				matrix = it->second.transform;
+				matrix = glm::scale(matrix, it->second.modelScale);
+				matrix = glm::translate(matrix,
+					glm::vec3(it->second.model.getSbb().c));
+				sbbCollider.c = glm::vec3(matrix[3]);
+				sbbCollider.ratio = it->second.model.getSbb().ratio *it->second.modelScale.x * 50.0f;
+				addOrUpdateColliders(collidersSBB, it->first, sbbCollider, it->second.transform);
+				break;
+			case noColision:
+				break;
+			}
+		}
+	}
+}
+void RenderColliders() {
+	for (std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >::iterator it =
+		collidersOBB.begin(); it != collidersOBB.end(); it++) {
+		std::cout << "Rendering collider OBB for " << it->first << std::endl;
+		glm::mat4 matrixCollider = glm::mat4(1.0);
+		matrixCollider = glm::translate(matrixCollider, std::get<0>(it->second).c);
+		matrixCollider = matrixCollider * glm::mat4(std::get<0>(it->second).u);
+		matrixCollider = glm::scale(matrixCollider, std::get<0>(it->second).e * 2.0f);
+		boxCollider.setColor(glm::vec4(1.0, 0.0, 0.0, 1.0));
+		boxCollider.enableWireMode();
+		boxCollider.render(matrixCollider);
+	}
+	for (std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >::iterator it =
+		collidersSBB.begin(); it != collidersSBB.end(); it++) {
+		std::cout << "Rendering collider SBB for " << it->first << std::endl;
+		glm::mat4 matrixCollider = glm::mat4(1.0);
+		matrixCollider = glm::translate(matrixCollider, std::get<0>(it->second).c);
+		matrixCollider = glm::scale(matrixCollider, glm::vec3(std::get<0>(it->second).ratio * 2.0f));
+		sphereCollider.setColor(glm::vec4(0.0, 1.0, 0.0, 1.0));
+		sphereCollider.enableWireMode();
+		sphereCollider.render(matrixCollider);
+	}
 }
 void applicationLoop() {
 	
@@ -800,7 +926,8 @@ void applicationLoop() {
 
 
 		DrawModels();
-
+		SetUpColisionMeshes();
+		RenderColliders();
 		glfwSwapBuffers(window);
 	}
 }
