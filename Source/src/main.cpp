@@ -71,14 +71,16 @@ Model modelCereza;
 //  Matrices Modelos
 glm::mat4 modelMatrixRaccoon = glm::mat4(1.0f);
 
+//  Matrices Modelos
+//  glm::mat4 modelMatrixRock = glm::mat4(1.0f);
+
+
 //variables player
 float speed = 1.0f;
 
 std::shared_ptr<Camera> camera(new ThirdPersonCamera());
 
 Sphere skyboxSphere(20, 20);
-Box boxCollider;
-Sphere sphereCollider(10, 10);
 
 // Terrain model instance
 Terrain terrain(-1, -1, 200, 8, "../Assets/Textures/heightmap.png");
@@ -112,20 +114,16 @@ int lastMousePosY, offsetY = 0;
 //	PIÑA
 std::vector<glm::vec3> pinAppPosition = { glm::vec3(0, 0, 0)};
 //	PERA
-std::vector<glm::vec3> peraPosition = { glm::vec3(1, 2.0, 0) };
+std::vector<glm::vec3> peraPosition = { glm::vec3(1, 0, 0) };
 //	SANDIA
-std::vector<glm::vec3> sandiaPosition = { glm::vec3(0, 2.0, 0) };
+std::vector<glm::vec3> sandiaPosition = { glm::vec3(0, 0, 0) };
 //	CHERRY
-std::vector<glm::vec3> cerezaPosition = { glm::vec3(1.0, 2.0, 1.0) };
+std::vector<glm::vec3> cerezaPosition = { glm::vec3(-1, 0, 0) };
 
 double deltaTime;
 double currTime, lastTime;
 
 float distanceFromTarget = 10.0;
-
-// Colliders
-std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> > collidersOBB;
-std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> > collidersSBB;
 
 // Se definen todos las funciones.
 void reshapeCallback(GLFWwindow *Window, int widthRes, int heightRes);
@@ -140,19 +138,6 @@ bool processInput(bool continueApplication = true);
 
 
 void LoadModels() {
-
-	/****
-	* COLLIDERS
-	*****/
-	boxCollider.init();
-	boxCollider.setShader(&shader);
-	boxCollider.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));
-
-	sphereCollider.init();
-	sphereCollider.setShader(&shader);
-	sphereCollider.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));
-
-	//	MAPACHE
 	modelRaccoon.loadModel("../Assets/Models/Racoon/Racoon.fbx");
 	modelRaccoon.setShader(&shaderMulLighting);
 
@@ -461,8 +446,6 @@ void destroy() {
 
 	// Basic objects Delete
 	skyboxSphere.destroy();
-	boxCollider.destroy();
-	sphereCollider.destroy();
 
 	//Modelos basicos
 	//	FRUTAS
@@ -634,107 +617,8 @@ bool processInput(bool continueApplication) {
 	return continueApplication;
 }
 
-void colliderModels() {
-
-	std::map<std::string, bool> collisionDetection;
-
-	// PIÑA colliders
-	for (int i = 0; i < pinAppPosition.size(); i++) {
-		AbstractModel::OBB pinaCollider;
-		glm::mat4 modelMatrixColliderPinapp = glm::mat4(1.0);
-		modelMatrixColliderPinapp = glm::translate(modelMatrixColliderPinapp, pinAppPosition[i]);
-		// Set the orientation of collider before doing the scale
-		pinaCollider.u = glm::quat_cast(modelMatrixColliderPinapp);
-		modelMatrixColliderPinapp = glm::scale(modelMatrixColliderPinapp, glm::vec3(1.0, 1.0, 1.0));
-		modelMatrixColliderPinapp = glm::translate(modelMatrixColliderPinapp, modelPinapp.getObb().c);
-		pinaCollider.c = glm::vec3(modelMatrixColliderPinapp[3]);
-		pinaCollider.e = modelPinapp.getObb().e * glm::vec3(1.0, 1.0, 1.0);
-		addOrUpdateColliders(collidersOBB, "pina-" + std::to_string(i), pinaCollider, modelMatrixColliderPinapp);
-	}
-
-	/*******************************************
-		 Render de colliders
-	*******************************************/
-	for (std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >::iterator it =
-		collidersOBB.begin(); it != collidersOBB.end(); it++) {
-		glm::mat4 matrixCollider = glm::mat4(1.0);
-		matrixCollider = glm::translate(matrixCollider, std::get<0>(it->second).c);
-		matrixCollider = matrixCollider * glm::mat4(std::get<0>(it->second).u);
-		matrixCollider = glm::scale(matrixCollider, std::get<0>(it->second).e * 2.0f);
-		boxCollider.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));
-		boxCollider.enableWireMode();
-		boxCollider.render(matrixCollider);
-	}
-
-	for (std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >::iterator it =
-		collidersSBB.begin(); it != collidersSBB.end(); it++) {
-		glm::mat4 matrixCollider = glm::mat4(1.0);
-		matrixCollider = glm::translate(matrixCollider, std::get<0>(it->second).c);
-		matrixCollider = glm::scale(matrixCollider, glm::vec3(std::get<0>(it->second).ratio * 2.0f));
-		sphereCollider.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));
-		sphereCollider.enableWireMode();
-		sphereCollider.render(matrixCollider);
-	}
-
-	/*******************************************
-		* Test Coliders
-		********************************************/
-	for (std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4>>::iterator it = collidersOBB.begin(); it != collidersOBB.end(); it++) {
-		bool isCollision = false;
-		for (std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4>>::iterator jt = collidersOBB.begin(); jt != collidersOBB.end(); jt++) {
-			if (it != jt && testOBBOBB(std::get<0>(it->second), std::get<0>(jt->second))) {
-				std::cout << "Collision " << it->first << " with " << jt->first << std::endl;
-				isCollision = true;
-			}
-		}
-		addOrUpdateCollisionDetection(collisionDetection, it->first, isCollision);
-	}
-
-	for (std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4>>::iterator it = collidersSBB.begin(); it != collidersSBB.end(); it++) {
-		bool isCollision = false;
-		for (std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4>>::iterator jt = collidersSBB.begin(); jt != collidersSBB.end(); jt++) {
-			if (it != jt && testSphereSphereIntersection(std::get<0>(it->second), std::get<0>(jt->second))) {
-				std::cout << "Collision " << it->first << " with " << jt->first << std::endl;
-				isCollision = true;
-			}
-		}
-	}
-
-	for (std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4>>::iterator it = collidersSBB.begin(); it != collidersSBB.end(); it++) {
-		bool isCollision = false;
-		for (std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4>>::iterator jt = collidersOBB.begin(); jt != collidersOBB.end(); jt++) {
-			if (testSphereOBox(std::get<0>(it->second), std::get<0>(jt->second))) {
-				std::cout << "Collision " << it->first << " with " << jt->first << std::endl;
-				isCollision = true;
-				addOrUpdateCollisionDetection(collisionDetection, jt->first, isCollision);
-			}
-		}
-		addOrUpdateCollisionDetection(collisionDetection, it->first, isCollision);
-	}
-
-	std::map<std::string, bool>::iterator colIt;
-	for (colIt = collisionDetection.begin(); colIt != collisionDetection.end(); colIt++) {
-		std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4>>::iterator it = collidersOBB.find(colIt->first);
-		std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4>>::iterator jt = collidersSBB.find(colIt->first);
-		if (it != collidersOBB.end()) {
-			if (!colIt->second) {
-				addOrUpdateColliders(collidersOBB, it->first);
-			}
-			else {
-				if (it->first.compare("racoon") == 0) {
-					modelMatrixRaccoon = std::get<1>(it->second);
-				}
-			}
-		}
-		if (jt != collidersSBB.end()) {
-			if (!colIt->second) {
-				addOrUpdateColliders(collidersSBB, jt->first);
-			}
-		}
-	}
-}
-
 void DrawModels() {
+	
 	
 	modelMatrixRaccoon[3][1] = terrain.getHeightTerrain(modelMatrixRaccoon[3][0], modelMatrixRaccoon[3][2]);
 	glm::mat4 matrixRac = glm::scale(modelMatrixRaccoon, glm::vec3(.0005f,.0005f,.0005f));
@@ -749,7 +633,7 @@ void DrawModels() {
 		modelPinapp.setScale(glm::vec3(1.0, 1.0, 1.0));
 		modelPinapp.render();
 	}
-	
+
 	//Modelo de pera
 	for (int i = 0; i < peraPosition.size(); i++) {
 		//peraPosition[i].y = terrain.getHeightTerrain(peraPosition[i].x, peraPosition[i].z);
@@ -773,11 +657,7 @@ void DrawModels() {
 		modelCereza.setScale(glm::vec3(2.0, 2.0, 2.0));
 		modelCereza.render();
 	}
-
-	// Colision de los modelos
-	colliderModels();
 }
-
 void applicationLoop() {
 	
 	bool psi = true;
