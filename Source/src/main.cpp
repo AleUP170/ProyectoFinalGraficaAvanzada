@@ -57,7 +57,7 @@ public:
 	int animation_index = 0;
 	glm::vec3 modelScale = glm::vec3(1.0f);
 	Tipocolision colision = noColision;
-
+	float rota = 0.0f;
 
 	GameObject(std::string locationModel) {
 		this->modelLocation = locationModel;
@@ -141,16 +141,18 @@ std::map<std::string, Controller> mapasControles{
 
 //	Modelos
 std::map<std::string, GameObject> modelos {
-	{"Raccoon",GameObject("../Assets/Models/Racoon/Racoon.fbx", glm::vec3(.0005f,.0005f,.0005f),SBBCol)}
+	{"Raccoon",GameObject("../Assets/models/Racoon/Raccoon.fbx", glm::vec3(0.0005f,0.0005f,0.0005f),SBBCol)}
 };
 
 //variables player
-float speed = 1.0f;
+float speed = 0.5f;
 bool isJumping = false;
 float heightTerrainJump = 0.0f;
 float verticalSpeedJump = 10.0f;
 double timeJump = 0.0f;
 float gravity = 9.81f;
+Controller currentController;
+
 
 std::shared_ptr<Camera> camera(new ThirdPersonCamera());
 
@@ -565,23 +567,17 @@ void SetJumpVariables() {
 	heightTerrainJump = terrain.getHeightTerrain(modelos.at("Raccoon").transform[3][0] , modelos.at("Raccoon").transform[3][2]);
 	timeJump = TimeManager::Instance().GetTime();
 	isJumping = true;
+	modelos.at("Raccoon").animation_index = 3;
 }
 void GamePadLogic() {
 	int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
 	if (present == 1) {
-		glm::mat4 cameraTransform = glm::mat4(1.0f);
-		cameraTransform[3] = glm::vec4(camera->getPosition(),1);
-		
-		glm::mat4 inv = glm::inverse(cameraTransform);
-		inv = glm::rotate(inv, camera->getAngleAroundTarget(), glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::vec3 cameraForward = glm::normalize(glm::vec3(inv[2]));
-		glm::vec3 x_axis = glm::cross(cameraForward,glm::vec3(0,1,0));
 		int axisCount;
 		const float *axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
 		int buttonCount;
 		const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
 
-		Controller currentController;
+		
 		if (glfwGetJoystickName(GLFW_JOYSTICK_1) == "Wireless Controller" && buttonCount == 18) {
 			currentController = mapasControles.at("PS4");
 			//std::cout << "PS4 " << std::endl;
@@ -591,15 +587,41 @@ void GamePadLogic() {
 			//std::cout << "xbox " << std::endl;
 		}
 		
-		//Left stick X
-		if (axes[currentController.joystickL_X] >= 0.1 || axes[currentController.joystickL_X] <= -0.1) {
-			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, x_axis * axes[currentController.joystickL_X] * speed);
 
-		}
+		modelos.at("Raccoon").animation_index = 1;
+		
+		
 		//Left stick Y
 		if (axes[currentController.joystickL_Y] >= 0.1 || axes[currentController.joystickL_Y] <= -0.1) {
+
+			glm::mat4 cameraTransform = glm::mat4(1.0f);
+			cameraTransform[3] = glm::vec4(camera->getPosition(), 1);
+
+			glm::mat4 inv = glm::inverse(cameraTransform);
+			inv = glm::rotate(inv, camera->getAngleAroundTarget(), glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::vec3 cameraForward = glm::normalize(glm::vec3(inv[2]));
+			glm::vec3 x_axis = glm::cross(cameraForward, glm::vec3(0, 1, 0));
 			
+			modelos.at("Raccoon").rota = camera->getAngleAroundTarget();
 			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, cameraForward * axes[currentController.joystickL_Y] * speed *-1.0f);
+
+			modelos.at("Raccoon").animation_index = 4;
+
+		}
+
+		//Left stick X
+		if (axes[currentController.joystickL_X] >= 0.1 || axes[currentController.joystickL_X] <= -0.1) {
+			glm::mat4 cameraTransform = glm::mat4(1.0f);
+			cameraTransform[3] = glm::vec4(camera->getPosition(), 1);
+
+			glm::mat4 inv = glm::inverse(cameraTransform);
+			inv = glm::rotate(inv, camera->getAngleAroundTarget(), glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::vec3 cameraForward = glm::normalize(glm::vec3(inv[2]));
+			glm::vec3 x_axis = glm::cross(cameraForward, glm::vec3(0, 1, 0));
+			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, x_axis * axes[currentController.joystickL_X] * speed);
+
+			modelos.at("Raccoon").rota = camera->getAngleAroundTarget() + glm::radians(90.0f * (axes[currentController.joystickL_X] * -1.0f));
+			modelos.at("Raccoon").animation_index = 4;
 
 		}
 		//Right stick X
@@ -703,13 +725,14 @@ bool processInput(bool continueApplication) {
 
 float tiroParabolico(float currentTerrainHeight) {
 	if (isJumping) {
-		std::cout << "is jumping " << std::endl;
 		double t = TimeManager::Instance().GetTime() - timeJump;
-		std::cout << "time start jump" << timeJump << " deltaTime " << t <<std::endl;
-		float yPos = heightTerrainJump + (verticalSpeedJump * (float) t) - (0.5f * gravity *(float) t * (float)t);
-		std::cout << "jump height " << yPos << " terrain Height " << currentTerrainHeight << std::endl;
-		if (yPos > currentTerrainHeight)
+		float yPos;
+		modelos.at("Raccoon").animation_index = 3;			
+		yPos = heightTerrainJump + (verticalSpeedJump * (float)t) - (0.5f * gravity *(float)t * (float)t);
+		if (yPos > currentTerrainHeight) {
 			return yPos;
+		}
+		modelos.at("Raccoon").animation_index = 1;
 		isJumping = false;
 
 	}
@@ -727,10 +750,12 @@ void DrawModels() {
 	modelos.at("Raccoon").transform[3][1] = tiroParabolico(terrainHeight);
 	modelos.at("Raccoon").model.setAnimationIndex(modelos.at("Raccoon").animation_index);
 	glm::mat4 matrixRac = glm::scale(modelos.at("Raccoon").transform,modelos.at("Raccoon").modelScale);
+	matrixRac = glm::rotate(matrixRac,modelos.at("Raccoon").rota, glm::vec3(0, 1, 0));
+	
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 0, 1));
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 1, 0));
-
 	//std::cout << glm::to_string(matrixRac) << std::endl;
+
 	modelos.at("Raccoon").model.render(matrixRac);
 
 
@@ -744,7 +769,7 @@ void SetUpColisionMeshes() {
 		if (it->second.active) {
 			switch (it->second.colision) {
 			case OBBCol:
-				std::cout << "Setting OBB collider for " << it->first << std::endl;
+				//std::cout << "Setting OBB collider for " << it->first << std::endl;
 				matrix = it->second.transform;
 				matrix = glm::scale(matrix, it->second.modelScale);
 				obbCollider.u = glm::quat_cast(it->second.transform);
@@ -754,7 +779,7 @@ void SetUpColisionMeshes() {
 				addOrUpdateColliders(collidersOBB, it->first, obbCollider, it->second.transform);
 				break;
 			case SBBCol:
-				std::cout << "Setting SBB collider for " << it->first << std::endl;
+				//std::cout << "Setting SBB collider for " << it->first << std::endl;
 				matrix = it->second.transform;
 				matrix = glm::scale(matrix, it->second.modelScale);
 				matrix = glm::translate(matrix,
@@ -772,7 +797,7 @@ void SetUpColisionMeshes() {
 void RenderColliders() {
 	for (std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >::iterator it =
 		collidersOBB.begin(); it != collidersOBB.end(); it++) {
-		std::cout << "Rendering collider OBB for " << it->first << std::endl;
+		//std::cout << "Rendering collider OBB for " << it->first << std::endl;
 		glm::mat4 matrixCollider = glm::mat4(1.0);
 		matrixCollider = glm::translate(matrixCollider, std::get<0>(it->second).c);
 		matrixCollider = matrixCollider * glm::mat4(std::get<0>(it->second).u);
@@ -783,7 +808,7 @@ void RenderColliders() {
 	}
 	for (std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >::iterator it =
 		collidersSBB.begin(); it != collidersSBB.end(); it++) {
-		std::cout << "Rendering collider SBB for " << it->first << std::endl;
+		//std::cout << "Rendering collider SBB for " << it->first << std::endl;
 		glm::mat4 matrixCollider = glm::mat4(1.0);
 		matrixCollider = glm::translate(matrixCollider, std::get<0>(it->second).c);
 		matrixCollider = glm::scale(matrixCollider, glm::vec3(std::get<0>(it->second).ratio * 2.0f));
@@ -927,7 +952,7 @@ void applicationLoop() {
 
 		DrawModels();
 		SetUpColisionMeshes();
-		RenderColliders();
+		//RenderColliders();
 		glfwSwapBuffers(window);
 	}
 }
