@@ -141,8 +141,62 @@ std::map<std::string, Controller> mapasControles{
 
 //	Modelos
 std::map<std::string, GameObject> modelos {
-	{"Raccoon",GameObject("../Assets/models/Racoon/Raccoon.fbx", glm::vec3(0.0005f,0.0005f,0.0005f),SBBCol)}
+
+	{"Raccoon",GameObject("../Assets/Models/Racoon/Racoon.fbx", glm::vec3(.0005f,.0005f,.0005f),SBBCol)},
+	{"Tree",GameObject("../Assets/Models/trees/tree.obj")},
+	{"Cerezo",GameObject("../Assets/Models/trees/cherry.obj")},
+	{"Cherry",GameObject("../Assets/Models/frutas/Cherry.fbx")},
+	{"Pear",GameObject("../Assets/Models/frutas/Pear.fbx")},
+	{"Pineapple",GameObject("../Assets/Models/frutas/Pineapple.fbx")},
+	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx")},
+	{"banco",GameObject("../Assets/Models/wooden/banco.obj")},
+	{"mesa",GameObject("../Assets/Models/wooden/mesaparque.obj")},
+	{"tronco",GameObject("../Assets/Models/wooden/tronco.obj")},
+	{"rock1",GameObject("../Assets/Models/rocks/rock1.obj")},
+	{"rock4",GameObject("../Assets/Models/rocks/rock4.obj")},
+	{"rock7",GameObject("../Assets/Models/rocks/rock7.obj")},
+	{"rock10",GameObject("../Assets/Models/rocks/rock10.obj")}
+
 };
+
+
+/************************************
+		Posisiones de modelo
+*************************************/
+//// Para cambiar las alturas de las frutas 
+//*** Posiciones de frutas ***//
+//	CHERRY
+std::vector<glm::vec3> cherryPosition = { glm::vec3(1, 0.0, 0) };
+//	PERA
+std::vector<glm::vec3> peraPosition = { glm::vec3(1, 0.0, 1) };
+//	PIï¿½A
+std::vector<glm::vec3> pinAppPosition = { glm::vec3(-1, 0.0, -1) };
+//	SANDIA
+std::vector<glm::vec3> sandiaPosition = { glm::vec3(0, 0.0, 0) };
+//*** Posiciones de arboles ***//
+//	Tree
+std::vector<glm::vec3> treePosition = { glm::vec3(0, 0, 0) };
+//	cerezo
+std::vector<glm::vec3> cerezoPosition = { glm::vec3(0, 0, 0) };
+//*** Posisiones de banca(o)s ***//
+//	Banca
+std::vector<glm::vec3> bancaPosition = { glm::vec3(0, 0, 5) };
+//	Mesa
+std::vector<glm::vec3> mesaPosition = { glm::vec3(0, 0, 10) };
+//	tronco
+std::vector<glm::vec3> troncoPosition = { glm::vec3(0, 0, 15) };
+//	banco
+std::vector<glm::vec3> bancoPosition = { glm::vec3(0, 0, 20) };
+
+//*** Posisiones de rocas ***//
+//	Rock 1
+std::vector<glm::vec3> rock1Position = { glm::vec3(0, 0, 25) };
+//	Rock 4
+std::vector<glm::vec3> rock4Position = { glm::vec3(0, 0, 5) };
+//	Rock 7
+std::vector<glm::vec3> rock7Position = { glm::vec3(0, 0, 10) };
+//	Rock 10
+std::vector<glm::vec3> rock10Position = { glm::vec3(0, 0, 15) };
 
 //variables player
 float speed = 0.5f;
@@ -283,7 +337,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	// Inicialización de los shaders
+	// Inicializaciï¿½n de los shaders
 	shader.initialize("../Shaders/colorShader.vs", "../Shaders/colorShader.fs");
 	shaderSkybox.initialize("../Shaders/skyBox.vs", "../Shaders/skyBox.fs");
 	shaderMulLighting.initialize("../Shaders/iluminacion_textura_animation.vs", "../Shaders/multipleLights.fs");
@@ -771,6 +825,114 @@ void DrawModels() {
 
 	modelos.at("Raccoon").model.render(matrixRac);
 
+	/*// Render de arboles
+	for (int i = 0; i < treePosition.size(); i++) {
+		treePosition[i].y = terrain.getHeightTerrain(treePosition[i].x, treePosition[i].z);
+		modelos.at("Tree").model.setPosition(treePosition[i]);
+		modelos.at("Tree").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("Tree").model.render();
+	}
+
+	// Render de cerezos
+	for (int i = 0; i < cerezoPosition.size(); i++) {
+		//cerezoPosition[i].y = terrain.getHeightTerrain(cerezoPosition[i].x, cerezoPosition[i].z);
+		modelos.at("Cerezo").model.setPosition(cerezoPosition[i]);
+		modelos.at("Cerezo").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("Cerezo").model.render();
+	}
+	//// Para cambiar las alturas de las frutas solo es cambiando el valor que se suma cuando se calcula y
+	// Render de Cherrys
+	for (int i = 0; i < cherryPosition.size(); i++) {
+		cherryPosition[i].y = terrain.getHeightTerrain(cherryPosition[i].x, cherryPosition[i].z) + 3;
+		modelos.at("Cherry").model.setPosition(cherryPosition[i]);
+		modelos.at("Cherry").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("Cherry").model.render();
+	}
+
+	// Render de peras
+	for (int i = 0; i < peraPosition.size(); i++) {
+		peraPosition[i].y = terrain.getHeightTerrain(peraPosition[i].x, peraPosition[i].z) + 3;
+		modelos.at("Pear").model.setPosition(peraPosition[i]);
+		modelos.at("Pear").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("Pear").model.render();
+	}
+
+	// Render de piï¿½as
+	for (int i = 0; i < pinAppPosition.size(); i++) {
+		pinAppPosition[i].y = terrain.getHeightTerrain(pinAppPosition[i].x, pinAppPosition[i].z) + 3;
+		modelos.at("Pineapple").model.setPosition(pinAppPosition[i]);
+		modelos.at("Pineapple").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("Pineapple").model.render();
+	}
+
+	// Render de Sandias
+	for (int i = 0; i < sandiaPosition.size(); i++) {
+		sandiaPosition[i].y = terrain.getHeightTerrain(sandiaPosition[i].x, sandiaPosition[i].z) + 3;
+		modelos.at("Watermelon").model.setPosition(sandiaPosition[i]);
+		modelos.at("Watermelon").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("Watermelon").model.render();
+	}
+
+	// Render de bancas 
+	for (int i = 0; i < bancaPosition.size(); i++) {
+		bancaPosition[i].y = terrain.getHeightTerrain(bancaPosition[i].x, bancaPosition[i].z);
+		modelos.at("banca").model.setPosition(bancaPosition[i]);
+		modelos.at("banca").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("banca").model.render();
+	}
+
+	// Render de mesas 
+	for (int i = 0; i < mesaPosition.size(); i++) {
+		mesaPosition[i].y = terrain.getHeightTerrain(mesaPosition[i].x, mesaPosition[i].z);
+		modelos.at("mesa").model.setPosition(mesaPosition[i]);
+		modelos.at("mesa").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("mesa").model.render();
+	}
+
+	// Render de tronco 
+	for (int i = 0; i < troncoPosition.size(); i++) {
+		troncoPosition[i].y = terrain.getHeightTerrain(troncoPosition[i].x, troncoPosition[i].z);
+		modelos.at("tronco").model.setPosition(troncoPosition[i]);
+		modelos.at("tronco").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("tronco").model.render();
+	}
+
+	// Render de bancos 
+	for (int i = 0; i < bancoPosition.size(); i++) {
+		bancoPosition[i].y = terrain.getHeightTerrain(bancoPosition[i].x, bancoPosition[i].z);
+		modelos.at("banco").model.setPosition(bancoPosition[i]);
+		modelos.at("banco").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("banco").model.render();
+	}*/
+
+	// Render de rocas
+	for (int i = 0; i < rock1Position.size(); i++) {
+		rock1Position[i].y = terrain.getHeightTerrain(rock1Position[i].x, rock1Position[i].z);
+		modelos.at("rock1").model.setPosition(rock1Position[i]);
+		modelos.at("rock1").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("rock1").model.render();
+	}
+
+	for (int i = 0; i < rock4Position.size(); i++) {
+		rock4Position[i].y = terrain.getHeightTerrain(rock4Position[i].x, rock4Position[i].z);
+		modelos.at("rock4").model.setPosition(rock4Position[i]);
+		modelos.at("rock4").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("rock4").model.render();
+	}
+
+	for (int i = 0; i < rock7Position.size(); i++) {
+		rock7Position[i].y = terrain.getHeightTerrain(rock7Position[i].x, rock7Position[i].z);
+		modelos.at("rock7").model.setPosition(rock7Position[i]);
+		modelos.at("rock7").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("rock7").model.render();
+	}
+
+	for (int i = 0; i < rock10Position.size(); i++) {
+		rock10Position[i].y = terrain.getHeightTerrain(rock10Position[i].x, rock10Position[i].z);
+		modelos.at("rock10").model.setPosition(rock10Position[i]);
+		modelos.at("rock10").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("rock10").model.render();
+	}
 
 }
 void SetUpColisionMeshes() {
@@ -795,8 +957,7 @@ void SetUpColisionMeshes() {
 				//std::cout << "Setting SBB collider for " << it->first << std::endl;
 				matrix = it->second.transform;
 				matrix = glm::scale(matrix, it->second.modelScale);
-				matrix = glm::translate(matrix,
-					glm::vec3(it->second.model.getSbb().c));
+				matrix = glm::translate(matrix, glm::vec3(it->second.model.getSbb().c));
 				sbbCollider.c = glm::vec3(matrix[3]);
 				sbbCollider.ratio = it->second.model.getSbb().ratio *it->second.modelScale.x * 50.0f;
 				addOrUpdateColliders(collidersSBB, it->first, sbbCollider, it->second.transform);
