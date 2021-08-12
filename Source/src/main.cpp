@@ -139,7 +139,7 @@ std::map<std::string, Controller> mapasControles{
 	{ "Xbox", Controller(2, 5, 0, 1, 1, 2) }
 };
 
-//	Modelos
+//	Modelos sin colliders
 std::map<std::string, GameObject> modelos {
 	{"Raccoon",GameObject("../Assets/Models/Racoon/Racoon.fbx", glm::vec3(.0005f,.0005f,.0005f),SBBCol)},
 	{"Tree",GameObject("../Assets/Models/trees/tree.obj")},
@@ -157,7 +157,18 @@ std::map<std::string, GameObject> modelos {
 	{"rock10",GameObject("../Assets/Models/rocks/rock10.obj")}
 };
 
+//	Modelos que necesitaran colliders 
+std::map<std::string, GameObject> modelosCollider{
+	{"Cherry",GameObject("../Assets/Models/frutas/Cherry.fbx", SBBCol)},
+	{"Pear",GameObject("../Assets/Models/frutas/Pear.fbx", SBBCol)},
+	{"Pineapple",GameObject("../Assets/Models/frutas/Pineapple.fbx", SBBCol)},
+	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx", SBBCol)}
+};
 
+/*	Para los colliders, es necesario agregar los arreglos de las posisiones de 
+	los modelos dentro de vector colisiones, el cual se localiza dentro de la función SetUpColisionMeshes.
+	Las posiciones de los arreglos deben corresponder con la posisión del los objetos.
+*/
 /************************************
 		Posisiones de modelo
 *************************************/
@@ -195,6 +206,7 @@ std::vector<glm::vec3> rock4Position = { glm::vec3(0, 0, 5) };
 std::vector<glm::vec3> rock7Position = { glm::vec3(0, 0, 10) };
 //	Rock 10
 std::vector<glm::vec3> rock10Position = { glm::vec3(0, 0, 15) };
+
 
 //variables player
 float speed = 1.0f;
@@ -263,6 +275,13 @@ bool processInput(bool continueApplication = true);
 
 void LoadModels() {
 	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
+	{
+		it->second.model.loadModel(it->second.modelLocation);
+		it->second.model.setShader(&shaderMulLighting);
+		it->second.model.setOrientation(glm::vec3(1.0f));
+
+	}
+	for (std::map<std::string, GameObject>::iterator it = modelosCollider.begin(); it != modelosCollider.end(); ++it)
 	{
 		it->second.model.loadModel(it->second.modelLocation);
 		it->second.model.setShader(&shaderMulLighting);
@@ -554,6 +573,10 @@ void DestroyModels() {
 	{
 		it->second.model.destroy();
 	}
+	for (std::map<std::string, GameObject>::iterator it = modelosCollider.begin(); it != modelosCollider.end(); ++it)
+	{
+		it->second.model.destroy();
+	}
 	//Destroy Render Colliders
 	boxCollider.destroy();
 	sphereCollider.destroy();
@@ -799,7 +822,7 @@ void DrawModels() {
 		modelos.at("Cerezo").model.setPosition(cerezoPosition[i]);
 		modelos.at("Cerezo").model.setScale(glm::vec3(1.0, 1.0, 1.0));
 		modelos.at("Cerezo").model.render();
-	}
+	}*/
 	//// Para cambiar las alturas de las frutas solo es cambiando el valor que se suma cuando se calcula y
 	// Render de Cherrys
 	for (int i = 0; i < cherryPosition.size(); i++) {
@@ -834,7 +857,7 @@ void DrawModels() {
 	}
 
 	// Render de bancas 
-	for (int i = 0; i < bancaPosition.size(); i++) {
+	/*for (int i = 0; i < bancaPosition.size(); i++) {
 		bancaPosition[i].y = terrain.getHeightTerrain(bancaPosition[i].x, bancaPosition[i].z);
 		modelos.at("banca").model.setPosition(bancaPosition[i]);
 		modelos.at("banca").model.setScale(glm::vec3(1.0, 1.0, 1.0));
@@ -866,7 +889,7 @@ void DrawModels() {
 	}*/
 
 	// Render de rocas
-	for (int i = 0; i < rock1Position.size(); i++) {
+	/*for (int i = 0; i < rock1Position.size(); i++) {
 		rock1Position[i].y = terrain.getHeightTerrain(rock1Position[i].x, rock1Position[i].z);
 		modelos.at("rock1").model.setPosition(rock1Position[i]);
 		modelos.at("rock1").model.setScale(glm::vec3(1.0, 1.0, 1.0));
@@ -892,38 +915,71 @@ void DrawModels() {
 		modelos.at("rock10").model.setPosition(rock10Position[i]);
 		modelos.at("rock10").model.setScale(glm::vec3(1.0, 1.0, 1.0));
 		modelos.at("rock10").model.render();
-	}
-
+	}*/
 }
 void SetUpColisionMeshes() {
 	std::map<std::string, GameObject>::iterator it;
 	glm::mat4 matrix;
 	AbstractModel::OBB obbCollider;
 	AbstractModel::SBB sbbCollider;
+	// Agregar los arreglos de los modelos que necesitan colliders
+	std::vector<std::vector<glm::vec3>> colisiones = { cherryPosition, peraPosition, pinAppPosition, sandiaPosition };
+	int jt; // iterador del vector con las posiisones de los modelos (colisiones)
 	for (it = modelos.begin(); it != modelos.end(); it++) {
 		if (it->second.active) {
 			switch (it->second.colision) {
-			case OBBCol:
-				std::cout << "Setting OBB collider for " << it->first << std::endl;
-				matrix = it->second.transform;
-				matrix = glm::scale(matrix, it->second.modelScale);
-				obbCollider.u = glm::quat_cast(it->second.transform);
-				matrix = glm::translate(matrix, it->second.model.getObb().c);
-				obbCollider.c = glm::vec3(matrix[3]);
-				obbCollider.e = it->second.model.getObb().e *it->second.modelScale * 100.0f;
-				addOrUpdateColliders(collidersOBB, it->first, obbCollider, it->second.transform);
-				break;
-			case SBBCol:
-				std::cout << "Setting SBB collider for " << it->first << std::endl;
-				matrix = it->second.transform;
-				matrix = glm::scale(matrix, it->second.modelScale);
-				matrix = glm::translate(matrix, glm::vec3(it->second.model.getSbb().c));
-				sbbCollider.c = glm::vec3(matrix[3]);
-				sbbCollider.ratio = it->second.model.getSbb().ratio *it->second.modelScale.x * 50.0f;
-				addOrUpdateColliders(collidersSBB, it->first, sbbCollider, it->second.transform);
-				break;
-			case noColision:
-				break;
+				case OBBCol:
+					std::cout << "Setting OBB collider for " << it->first << std::endl;
+					matrix = it->second.transform;
+					matrix = glm::scale(matrix, it->second.modelScale);
+					obbCollider.u = glm::quat_cast(it->second.transform);
+					matrix = glm::translate(matrix, it->second.model.getObb().c);
+					obbCollider.c = glm::vec3(matrix[3]);
+					obbCollider.e = it->second.model.getObb().e *it->second.modelScale * 100.0f;
+					addOrUpdateColliders(collidersOBB, it->first, obbCollider, it->second.transform);
+					break;
+				case SBBCol:
+					std::cout << "Setting SBB collider for " << it->first << std::endl;
+					matrix = it->second.transform;
+					matrix = glm::scale(matrix, it->second.modelScale);
+					matrix = glm::translate(matrix, glm::vec3(it->second.model.getSbb().c));
+					sbbCollider.c = glm::vec3(matrix[3]);
+					sbbCollider.ratio = it->second.model.getSbb().ratio *it->second.modelScale.x * 50.0f;
+					addOrUpdateColliders(collidersSBB, it->first, sbbCollider, it->second.transform);
+					break;
+				case noColision:
+					break;
+			}
+		}
+	}
+	for (it = modelosCollider.begin(), jt = 0 ; it != modelosCollider.end() && jt < colisiones.size(); it++, jt++) {
+		if (it->second.active) {
+			switch (it->second.colision) {
+				case OBBCol:
+					for (int i = 0; i < colisiones[jt].size(); i++) {
+						std::cout << "Setting OBB collider for " << it->first + std::to_string(i) << std::endl;
+						matrix = it->second.transform;
+						matrix = glm::translate(matrix, colisiones[jt][i]);
+						obbCollider.u = glm::quat_cast(it->second.transform);
+						matrix = glm::scale(matrix, it->second.modelScale);
+						matrix = glm::translate(matrix, it->second.model.getObb().c);
+						obbCollider.c = glm::vec3(matrix[3]);
+						obbCollider.e = it->second.model.getObb().e * it->second.modelScale;
+						addOrUpdateColliders(collidersOBB, it->first + std::to_string(i), obbCollider, it->second.transform);
+					}
+					break;
+				case SBBCol:
+					for (int i = 0; i < colisiones[jt].size(); i++) {
+						std::cout << "Setting SBB collider for " << it->first + std::to_string(i) << std::endl;
+						matrix = it->second.transform;
+						matrix = glm::translate(matrix, colisiones[jt][i]);
+						matrix = glm::scale(matrix, it->second.modelScale);
+						matrix = glm::translate(matrix, it->second.model.getSbb().c);
+						sbbCollider.c = glm::vec3(matrix[3]);
+						sbbCollider.ratio = it->second.model.getSbb().ratio * 1.0;
+						addOrUpdateColliders(collidersSBB, it->first + std::to_string(i), sbbCollider, it->second.transform);
+					}
+					break;
 			}
 		}
 	}
