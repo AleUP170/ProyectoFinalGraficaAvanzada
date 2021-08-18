@@ -37,7 +37,7 @@ struct  SpotLight{
 };
 
 const int MAX_POINT_LIGHTS = 20;
-const int MAX_SPOT_LIGHTS = 10;
+const int MAX_SPOT_LIGHTS = 1;
 
 out vec4 color;
 
@@ -54,23 +54,30 @@ uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
 
 uniform vec3 viewPos;  
 uniform sampler2D texture1;
+uniform sampler2D texture2;
 
 vec3 calculateDirectionalLight(Light light, vec3 direction){
+	
+	// Mix de las texturas
+	vec4 colorTexture1 = texture(texture1, our_uv);
+	vec4 colorTexture2 = texture(texture2, our_uv);
+	vec4 colorTextFinal = mix(colorTexture1, colorTexture2, 0.7f);
+
 	// Ambient
-    vec3 ambient  = light.ambient * vec3(texture(texture1, our_uv));
+    vec3 ambient  = light.ambient * vec3(colorTextFinal);
   	
     // Diffuse 
     vec3 normal = normalize(our_normal);
     vec3 lightDir = normalize(-direction);
     float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse  = light.diffuse * (diff * vec3(texture(texture1, our_uv)));
+    vec3 diffuse  = light.diffuse * (diff * vec3(colorTextFinal));
     
     // Specular
     float specularStrength = 0.5f;
     vec3 viewDir = normalize(viewPos - fragPos);
     vec3 reflectDir = reflect(-lightDir, normal);  
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-    vec3 specular = light.specular * (spec * vec3(texture(texture1, our_uv)));  
+    vec3 specular = light.specular * (spec * vec3(colorTextFinal));  
         
     return (ambient + diffuse + specular);
 }
@@ -102,8 +109,12 @@ vec3 calculateSpotLights(){
 
 void main()
 {
-	vec4 colorText = texture(texture1, our_uv);
-	if(colorText.a < 0.1)
+	//
+	vec4 textColor1 = texture(texture1, our_uv);
+	vec4 textColor2 = texture(texture2, our_uv);
+	vec4 colorTextFinal = mix(textColor1, textColor2, 0.7f);
+
+	if(colorTextFinal.a < 0.1)
 		discard;
-    color = vec4(calculateDirectionalLight(directionalLight.light, directionalLight.direction) + calculatePointLights() + calculateSpotLights(), colorText.a);
+    color = vec4(calculateDirectionalLight(directionalLight.light, directionalLight.direction) + calculatePointLights() + calculateSpotLights(), colorTextFinal.a);
 }
