@@ -132,6 +132,8 @@ Shader shaderSkybox;
 Shader shaderMulLighting;
 //Shader para el terreno
 Shader shaderTerrain;
+//Shader para sistema particulas
+Shader shaderParticlesFountain;
 
 //Mapeo controles
 std::map<std::string, Controller> mapasControles{
@@ -223,7 +225,7 @@ Sphere skyboxSphere(20, 20);
 // Terrain model instance
 Terrain terrain(-1, -1, 200, 8, "../Assets/Textures/heightmap.png");
 
-GLuint textureTerrainBackgroundID, textureTerrainRID, textureTerrainGID, textureTerrainBID, textureTerrainBlendMapID;
+GLuint textureTerrainBackgroundID, textureTerrainRID, textureTerrainGID, textureTerrainBID, textureTerrainBlendMapID, textureParticleFountainID;
 GLuint skyboxTextureID;
 
 GLenum types[6] = {
@@ -241,15 +243,25 @@ std::string fileNames[6] = { "../Assets/Textures/interstellar/xpos.png",
 		"../Assets/Textures/interstellar/zpos.png",
 		"../Assets/Textures/interstellar/zneg.png" };
 
-
 bool exitApp = false;
 int lastMousePosX, offsetX = 0;
 int lastMousePosY, offsetY = 0;
 
+// Model matrix definitions
+glm::mat4 modelMatrixFountain = glm::mat4(1.0f);
 
+std::map<std::string, glm::vec3> blendingUnsorted = {
+		{"fountain", glm::vec3(5.0, 0.0, -40.0)}
+};
 
 double deltaTime;
 double currTime, lastTime;
+
+//Define variables para el sistema de particulas de una fuente de agua
+GLuint initVel, startTime;
+GLuint VAOParticles;
+GLuint nParticles = 7000;
+double currTimeParticlesAnimation = 0.0, lastTimeParticlesAnimation = 0.0;
 
 float distanceFromTarget = 10.0;
 
@@ -271,7 +283,6 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void init(int width, int height, std::string strTitle, bool bFullScreen);
 void destroy();
 bool processInput(bool continueApplication = true);
-
 
 void LoadModels() {
 	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
@@ -354,9 +365,10 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	// Inicialización de los shaders
 	shader.initialize("../Shaders/colorShader.vs", "../Shaders/colorShader.fs");
-	shaderSkybox.initialize("../Shaders/skyBox.vs", "../Shaders/skyBox.fs");
-	shaderMulLighting.initialize("../Shaders/iluminacion_textura_animation.vs", "../Shaders/multipleLights.fs");
-	shaderTerrain.initialize("../Shaders/terrain.vs", "../Shaders/terrain.fs");
+	shaderSkybox.initialize("../Shaders/skyBox.vs", "../Shaders/skyBox_fog.fs");
+	shaderMulLighting.initialize("../Shaders/iluminacion_textura_animation_fog.vs", "../Shaders/multipleLights_fog.fs");
+	shaderTerrain.initialize("../Shaders/terrain_fog.vs", "../Shaders/terrain_fog.fs");
+	shaderParticlesFountain.initialize("../Shaders/particlesFountain.vs", "../Shaders/particlesFountain.fs");
 
 	// Inicializacion de los objetos.
 	skyboxSphere.init();
@@ -594,6 +606,7 @@ void destroy() {
 	shaderMulLighting.destroy();
 	shaderSkybox.destroy();
 	shaderTerrain.destroy();
+	shaderParticlesFountain.destroy();
 
 	// Basic objects Delete
 	skyboxSphere.destroy();
@@ -1057,8 +1070,18 @@ void applicationLoop() {
 			glm::value_ptr(projection));
 		shaderTerrain.setMatrix4("view", 1, false,
 			glm::value_ptr(view));
+		// Settea la matriz de vista y projection al shader del sistema de particulas
+		shaderParticlesFountain.setMatrix4("projection", 1, false,
+			glm::value_ptr(projection));
+		shaderParticlesFountain.setMatrix4("view", 1, false,
+			glm::value_ptr(view));
 
-		
+		/*******************************************
+		 * Propiedades de neblina
+		 *******************************************/
+		shaderMulLighting.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderTerrain.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderSkybox.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
 
 		/*******************************************
 		 * Propiedades Luz direccional
@@ -1088,7 +1111,6 @@ void applicationLoop() {
 		 *******************************************/
 		shaderMulLighting.setInt("pointLightCount", 0);
 		shaderTerrain.setInt("pointLightCount",0);
-
 
 		/*******************************************
 		 * Terrain Cesped
