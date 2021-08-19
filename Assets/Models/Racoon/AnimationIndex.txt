@@ -1,0 +1,4 @@
+iddle 1
+inicio salto 2
+saltando 3
+running 4

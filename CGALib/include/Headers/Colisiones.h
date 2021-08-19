@@ -251,14 +251,13 @@ bool testIntersectRayAABB(glm::vec3 p1, glm::vec3 p2, glm::vec3 v, AbstractModel
 bool testIntersectRayAABB(glm::vec3 p1, glm::vec3 p2, glm::vec3 v, AbstractModel::OBB obb) {
 	glm::quat qinv = glm::inverse(obb.u);
 	p1 = qinv * glm::vec4(p1, 1.0);
-	p1 = qinv * glm::vec4(p2, 1.0);
+	p2 = qinv * glm::vec4(p2, 1.0);
 	v = qinv * glm::vec4(v, 1.0);
 	glm::vec3 ct = qinv * glm::vec4(obb.c, 1.0);
 	AbstractModel::AABB aabb;
 	aabb.mins = ct - obb.e;
-	aabb.maxs = ct - obb.c;
-
-
+	aabb.maxs = ct + obb.e;
+	return testIntersectRayAABB(p1, p2, v, aabb);
 }
 
 #endif /* COLISIONES_H_ */

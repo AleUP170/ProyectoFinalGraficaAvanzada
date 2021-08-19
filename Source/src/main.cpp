@@ -7,6 +7,9 @@
 #include <string>
 #include <iostream>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
+
 //glfw include
 #include <GLFW/glfw3.h>
 
@@ -39,7 +42,83 @@
 
 #include "Headers/AnimationUtils.h"
 
+// Include Colision headers functions
+#include "Headers/Colisiones.h"
 #define ARRAY_SIZE_IN_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
+
+enum Tipocolision { noColision, OBBCol, SBBCol };
+class GameObject {
+public:
+	Model model;
+	glm::mat4 transform = glm::mat4(1.0f);
+	bool active = true;
+	std::string modelLocation;
+	std::string parentName;
+	int animation_index = 0;
+	glm::vec3 modelScale = glm::vec3(1.0f);
+	Tipocolision colision = noColision;
+	float rota = 0.0f;
+
+	GameObject(std::string locationModel) {
+		this->modelLocation = locationModel;
+	}
+	GameObject(std::string locationModel, int animIndex) {
+		this->modelLocation = locationModel;
+		this->animation_index = animIndex;
+	}
+	GameObject(std::string locationModel, int animIndex, glm::vec3 scale) {
+		this->modelLocation = locationModel;
+		this->animation_index = animIndex;
+		this->modelScale = scale;
+	}
+	GameObject(std::string locationModel, glm::vec3 scale) {
+		this->modelLocation = locationModel;
+		this->modelScale = scale;
+	}
+
+	GameObject(std::string locationModel, Tipocolision col) {
+		this->modelLocation = locationModel;
+		this->colision = col;
+	}
+	GameObject(std::string locationModel, int animIndex, Tipocolision col) {
+		this->modelLocation = locationModel;
+		this->animation_index = animIndex;
+		this->colision = col;
+	}
+	GameObject(std::string locationModel, int animIndex, glm::vec3 scale, Tipocolision col) {
+		this->modelLocation = locationModel;
+		this->animation_index = animIndex;
+		this->modelScale = scale;
+		this->colision = col;
+	}
+	GameObject(std::string locationModel, glm::vec3 scale, Tipocolision col) {
+		this->modelLocation = locationModel;
+		this->modelScale = scale;
+		this->colision = col;
+	}
+
+};
+
+class Controller {
+public:
+	int joystickR_X;
+	int joystickR_Y;
+	int joystickL_X;
+	int joystickL_Y;
+	int but_A;
+	int but_B;
+	Controller() {
+
+	}
+	Controller(int jR_X,int jR_Y,int jL_X,int jL_y,int butt_A, int butt_b) {
+		this->joystickR_X = jR_X;
+		this->joystickR_Y = jR_Y;
+		this->joystickL_X = jL_X;
+		this->joystickL_Y = jL_y;
+		this->but_A = butt_A;
+		this->but_B = butt_b;
+	}
+};
 
 int screenWidth;
 int screenHeight;
@@ -54,18 +133,26 @@ Shader shaderMulLighting;
 //Shader para el terreno
 Shader shaderTerrain;
 
+//Mapeo controles
+std::map<std::string, Controller> mapasControles{
+	{ "PS4", Controller(2, 5, 0, 1, 1, 2) },
+	{ "Xbox", Controller(2, 5, 0, 1, 1, 2) }
+};
+
 //	Modelos
-Model modelRaccoon;
-
-
-
-///Matrices Modelos
-glm::mat4 modelMatrixRaccoon = glm::mat4(1.0f);
-
-
+std::map<std::string, GameObject> modelos {
+	{"Raccoon",GameObject("../Assets/models/Racoon/Raccoon.fbx", glm::vec3(0.0005f,0.0005f,0.0005f),SBBCol)}
+};
 
 //variables player
-float speed = 1.0f;
+float speed = 0.5f;
+bool isJumping = false;
+float heightTerrainJump = 0.0f;
+float verticalSpeedJump = 10.0f;
+double timeJump = 0.0f;
+float gravity = 9.81f;
+Controller currentController;
+
 
 std::shared_ptr<Camera> camera(new ThirdPersonCamera());
 
@@ -104,6 +191,14 @@ double currTime, lastTime;
 
 float distanceFromTarget = 10.0;
 
+// Colliders
+std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> > collidersOBB;
+std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> > collidersSBB;
+
+//Render Colliders
+Box boxCollider;
+Sphere sphereCollider(10, 10);
+
 // Se definen todos las funciones.
 void reshapeCallback(GLFWwindow *Window, int widthRes, int heightRes);
 void keyCallback(GLFWwindow *window, int key, int scancode, int action,
@@ -117,9 +212,20 @@ bool processInput(bool continueApplication = true);
 
 
 void LoadModels() {
-	modelRaccoon.loadModel("../Assets/Models/Racoon/Racoon.fbx");
-	modelRaccoon.setShader(&shaderMulLighting);
+	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
+	{
+		it->second.model.loadModel(it->second.modelLocation);
+		it->second.model.setShader(&shaderMulLighting);
+		it->second.model.setOrientation(glm::vec3(1.0f));
 
+	}
+	//Colliders Render
+	boxCollider.init();
+	boxCollider.setShader(&shader);
+	boxCollider.setColor(glm::vec4(1.0f));
+	sphereCollider.init();
+	sphereCollider.setShader(&shader);
+	sphereCollider.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));
 
 }
 
@@ -196,7 +302,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	camera->setSensitivity(1.0);
 	camera->setDistanceFromTarget(distanceFromTarget);
-	camera->setCameraTarget(modelMatrixRaccoon[3]);
+	camera->setCameraTarget(modelos.at("Raccoon").transform[3]);
 	camera->updateCamera();
 
 	// Definimos el tamanio de la imagen
@@ -394,7 +500,14 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 }
 void DestroyModels() {
-	modelRaccoon.destroy();
+	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
+	{
+		it->second.model.destroy();
+	}
+	//Destroy Render Colliders
+	boxCollider.destroy();
+	sphereCollider.destroy();
+
 }
 
 void destroy() {
@@ -447,38 +560,91 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 
 	
 }
+
+void SetJumpVariables() {
+	std::cout << "Set jump Variables" << std::endl;
+	std::cout << "time Jump = " << TimeManager::Instance().GetTime() << std::endl;
+	heightTerrainJump = terrain.getHeightTerrain(modelos.at("Raccoon").transform[3][0] , modelos.at("Raccoon").transform[3][2]);
+	timeJump = TimeManager::Instance().GetTime();
+	isJumping = true;
+	modelos.at("Raccoon").animation_index = 3;
+}
 void GamePadLogic() {
 	int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
 	if (present == 1) {
-		glm::mat4 cameraTransform = glm::mat4(1.0f);
-		cameraTransform[3] = glm::vec4(camera->getPosition(),1);
-		
-		glm::mat4 inv = glm::inverse(cameraTransform);
-		inv = glm::rotate(inv, camera->getAngleAroundTarget(), glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::vec3 cameraForward = glm::normalize(glm::vec3(inv[2]));
-		glm::vec3 x_axis = glm::cross(cameraForward,glm::vec3(0,1,0));
 		int axisCount;
 		const float *axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
+		int buttonCount;
+		const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
+
 		
-		//Left stick X
-		if (axes[0] >= 0.1 || axes[0] <= -0.1) {
-			modelMatrixRaccoon = glm::translate(modelMatrixRaccoon, x_axis * axes[0] * speed);
-
+		if (glfwGetJoystickName(GLFW_JOYSTICK_1) == "Wireless Controller" && buttonCount == 18) {
+			currentController = mapasControles.at("PS4");
+			//std::cout << "PS4 " << std::endl;
 		}
+		else {
+			currentController = mapasControles.at("Xbox");
+			//std::cout << "xbox " << std::endl;
+		}
+		
+
+		modelos.at("Raccoon").animation_index = 1;
+		
+		
 		//Left stick Y
-		if (axes[1] >= 0.1 || axes[1] <= -0.1) {
+		float angle = modelos.at("Raccoon").rota; 
+		int invAngle = 1;
+		if (axes[currentController.joystickL_Y] >= 0.1 || axes[currentController.joystickL_Y] <= -0.1) {
+			if (angle == modelos.at("Raccoon").rota)
+				angle = camera->getAngleAroundTarget();
+			if (axes[currentController.joystickL_Y] >= 0.1) {
+				angle += glm::radians(180.0f);
+				invAngle = -1;
+			}
+
+			glm::mat4 cameraTransform = glm::mat4(1.0f);
+			cameraTransform[3] = glm::vec4(camera->getPosition(), 1);
+
+			glm::mat4 inv = glm::inverse(cameraTransform);
+			inv = glm::rotate(inv, camera->getAngleAroundTarget(), glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::vec3 cameraForward = glm::normalize(glm::vec3(inv[2]));
+			glm::vec3 x_axis = glm::cross(cameraForward, glm::vec3(0, 1, 0));
 			
-			modelMatrixRaccoon = glm::translate(modelMatrixRaccoon, cameraForward * axes[1] * speed *-1.0f);
+			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, cameraForward * axes[currentController.joystickL_Y] * speed *-1.0f);
+			modelos.at("Raccoon").animation_index = 4;
 
 		}
+
+		//Left stick X
+		if (axes[currentController.joystickL_X] >= 0.1 || axes[currentController.joystickL_X] <= -0.1) {
+			if (angle == modelos.at("Raccoon").rota)
+				angle = camera->getAngleAroundTarget();
+			angle += glm::radians(-90 * axes[currentController.joystickL_X] * invAngle);
+			
+			glm::mat4 cameraTransform = glm::mat4(1.0f);
+			cameraTransform[3] = glm::vec4(camera->getPosition(), 1);
+
+			glm::mat4 inv = glm::inverse(cameraTransform);
+			inv = glm::rotate(inv, camera->getAngleAroundTarget(), glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::vec3 cameraForward = glm::normalize(glm::vec3(inv[2]));
+			glm::vec3 x_axis = glm::cross(cameraForward, glm::vec3(0, 1, 0));
+			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, x_axis * axes[currentController.joystickL_X] * speed);
+
+			modelos.at("Raccoon").rota = camera->getAngleAroundTarget() + glm::radians(90.0f * (axes[currentController.joystickL_X] * -1.0f));
+			modelos.at("Raccoon").animation_index = 4;
+
+		}
+		
+		modelos.at("Raccoon").rota = angle;
+
 		//Right stick X
-		if (axes[2] >= 0.1 || axes[2] <= -0.1) {
-			camera->mouseMoveCamera(axes[2],0, deltaTime);
+		if (axes[currentController.joystickR_X] >= 0.1 || axes[currentController.joystickR_X] <= -0.1) {
+			camera->mouseMoveCamera(axes[currentController.joystickR_X],0, deltaTime);
 
 		}
 		//Right stick Y
-		if (axes[5] >= 0.1 || axes[5] <= -0.1) {
-			camera->mouseMoveCamera(0,axes[5], deltaTime);
+		if (axes[currentController.joystickR_Y] >= 0.1 || axes[currentController.joystickR_Y] <= -0.1) {
+			camera->mouseMoveCamera(0,axes[currentController.joystickR_Y], deltaTime);
 		}
 		//L2
 		if (axes[3] != -1) {
@@ -488,48 +654,46 @@ void GamePadLogic() {
 		if (axes[4] != -1) {
 
 		}
-
-		/*
-		int buttonCount;
-		const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1,&buttonCount);
-		if (GLFW_PRESS == buttons[1]) {
-			std::cout << "X button pressed" << buttons[1] << std::endl;
+		if (GLFW_PRESS == buttons[currentController.but_A]) {
+			if(!isJumping)
+				SetJumpVariables();
+			//std::cout << "X button pressed" << buttons[1] << std::endl;
 		}
 		else if (GLFW_RELEASE == buttons[1]) {
-			std::cout << "X button released" << buttons[1] << std::endl;
+			//std::cout << "X button released" << buttons[1] << std::endl;
 		}
 		if (GLFW_PRESS == buttons[0]) {
-			std::cout << "Square button pressed" << buttons[0] << std::endl;
+			//std::cout << "Square button pressed" << buttons[0] << std::endl;
 		}
 		else if (GLFW_RELEASE == buttons[0]) {
-			std::cout << "Square button released" << buttons[0] << std::endl;
+			//std::cout << "Square button released" << buttons[0] << std::endl;
 		}
 		if (GLFW_PRESS == buttons[3]) {
-			std::cout << "Triangle button pressed" << buttons[3] << std::endl;
+			//std::cout << "Triangle button pressed" << buttons[3] << std::endl;
 		}
 		else if (GLFW_RELEASE == buttons[3]) {
-			std::cout << "Triangle button released" << buttons[3] << std::endl;
+			//std::cout << "Triangle button released" << buttons[3] << std::endl;
 		}
 		if (GLFW_PRESS == buttons[2]) {
-			std::cout << "circle button pressed" << buttons[2] << std::endl;
+			//std::cout << "circle button pressed" << buttons[2] << std::endl;
 		}
 		else if (GLFW_RELEASE == buttons[2]) {
-			std::cout << "circle button released" << buttons[2] << std::endl;
+			//std::cout << "circle button released" << buttons[2] << std::endl;
 		}
 
 		if (GLFW_PRESS == buttons[4]) {
-			std::cout << "L! button pressed" << buttons[4] << std::endl;
+			//std::cout << "L! button pressed" << buttons[4] << std::endl;
 		}
 		else if (GLFW_RELEASE == buttons[4]) {
-			std::cout << "L! button released" << buttons[4] << std::endl;
+			//std::cout << "L! button released" << buttons[4] << std::endl;
 		}
 		if (GLFW_PRESS == buttons[5]) {
-			std::cout << "R1 button pressed" << buttons[5] << std::endl;
+			//std::cout << "R1 button pressed" << buttons[5] << std::endl;
 		}
 		else if (GLFW_RELEASE == buttons[5]) {
-			std::cout << "R1 button released" << buttons[5] << std::endl;
+			//std::cout << "R1 button released" << buttons[5] << std::endl;
 		}
-		*/
+		
 
 	}
 }
@@ -572,13 +736,99 @@ bool processInput(bool continueApplication) {
 	return continueApplication;
 }
 
+float tiroParabolico(float currentTerrainHeight) {
+	if (isJumping) {
+		double t = TimeManager::Instance().GetTime() - timeJump;
+		float yPos;
+		modelos.at("Raccoon").animation_index = 3;			
+		yPos = heightTerrainJump + (verticalSpeedJump * (float)t) - (0.5f * gravity *(float)t * (float)t);
+		if (yPos > currentTerrainHeight) {
+			return yPos;
+		}
+		modelos.at("Raccoon").animation_index = 1;
+		isJumping = false;
+
+	}
+	return currentTerrainHeight;
+}
+void SetAnimationIndex() {
+	std::map<std::string, GameObject>::iterator it;
+	for (it = modelos.begin(); it != modelos.end(); it++) {
+		it->second.model.setAnimationIndex(it->second.animation_index);
+	}
+}
 void DrawModels() {
-	modelMatrixRaccoon[3][1] = terrain.getHeightTerrain(modelMatrixRaccoon[3][0], modelMatrixRaccoon[3][2]);
-	glm::mat4 matrixRac = glm::scale(modelMatrixRaccoon,glm::vec3(.0005f,.0005f,.0005f));
+	SetAnimationIndex();
+	float terrainHeight = terrain.getHeightTerrain(modelos.at("Raccoon").transform[3][0], modelos.at("Raccoon").transform[3][2]);
+	modelos.at("Raccoon").transform[3][1] = tiroParabolico(terrainHeight);
+	modelos.at("Raccoon").model.setAnimationIndex(modelos.at("Raccoon").animation_index);
+	glm::mat4 matrixRac = glm::scale(modelos.at("Raccoon").transform,modelos.at("Raccoon").modelScale);
+	matrixRac = glm::rotate(matrixRac,modelos.at("Raccoon").rota, glm::vec3(0, 1, 0));
+	
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 0, 1));
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 1, 0));
-	std::cout << "raccon position" << modelMatrixRaccoon[3].x << "," << modelMatrixRaccoon[3].y << "," << modelMatrixRaccoon[3].z << std::endl;
-	modelRaccoon.render(matrixRac);
+	//std::cout << glm::to_string(matrixRac) << std::endl;
+
+	modelos.at("Raccoon").model.render(matrixRac);
+
+
+}
+void SetUpColisionMeshes() {
+	std::map<std::string, GameObject>::iterator it;
+	glm::mat4 matrix;
+	AbstractModel::OBB obbCollider;
+	AbstractModel::SBB sbbCollider;
+	for (it = modelos.begin(); it != modelos.end(); it++) {
+		if (it->second.active) {
+			switch (it->second.colision) {
+			case OBBCol:
+				//std::cout << "Setting OBB collider for " << it->first << std::endl;
+				matrix = it->second.transform;
+				matrix = glm::scale(matrix, it->second.modelScale);
+				obbCollider.u = glm::quat_cast(it->second.transform);
+				matrix = glm::translate(matrix, it->second.model.getObb().c);
+				obbCollider.c = glm::vec3(matrix[3]);
+				obbCollider.e = it->second.model.getObb().e *it->second.modelScale * 100.0f;
+				addOrUpdateColliders(collidersOBB, it->first, obbCollider, it->second.transform);
+				break;
+			case SBBCol:
+				//std::cout << "Setting SBB collider for " << it->first << std::endl;
+				matrix = it->second.transform;
+				matrix = glm::scale(matrix, it->second.modelScale);
+				matrix = glm::translate(matrix,
+					glm::vec3(it->second.model.getSbb().c));
+				sbbCollider.c = glm::vec3(matrix[3]);
+				sbbCollider.ratio = it->second.model.getSbb().ratio *it->second.modelScale.x * 50.0f;
+				addOrUpdateColliders(collidersSBB, it->first, sbbCollider, it->second.transform);
+				break;
+			case noColision:
+				break;
+			}
+		}
+	}
+}
+void RenderColliders() {
+	for (std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >::iterator it =
+		collidersOBB.begin(); it != collidersOBB.end(); it++) {
+		//std::cout << "Rendering collider OBB for " << it->first << std::endl;
+		glm::mat4 matrixCollider = glm::mat4(1.0);
+		matrixCollider = glm::translate(matrixCollider, std::get<0>(it->second).c);
+		matrixCollider = matrixCollider * glm::mat4(std::get<0>(it->second).u);
+		matrixCollider = glm::scale(matrixCollider, std::get<0>(it->second).e * 2.0f);
+		boxCollider.setColor(glm::vec4(1.0, 0.0, 0.0, 1.0));
+		boxCollider.enableWireMode();
+		boxCollider.render(matrixCollider);
+	}
+	for (std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >::iterator it =
+		collidersSBB.begin(); it != collidersSBB.end(); it++) {
+		//std::cout << "Rendering collider SBB for " << it->first << std::endl;
+		glm::mat4 matrixCollider = glm::mat4(1.0);
+		matrixCollider = glm::translate(matrixCollider, std::get<0>(it->second).c);
+		matrixCollider = glm::scale(matrixCollider, glm::vec3(std::get<0>(it->second).ratio * 2.0f));
+		sphereCollider.setColor(glm::vec4(0.0, 1.0, 0.0, 1.0));
+		sphereCollider.enableWireMode();
+		sphereCollider.render(matrixCollider);
+	}
 }
 void applicationLoop() {
 	
@@ -606,7 +856,7 @@ void applicationLoop() {
 		glm::mat4 projection = glm::perspective(glm::radians(45.0f),
 			(float)screenWidth / (float)screenHeight, 0.01f, 100.0f);
 
-		camera->setCameraTarget(modelMatrixRaccoon[3]);
+		camera->setCameraTarget(modelos.at("Raccoon").transform[3]);
 		camera->updateCamera();
 		view = camera->getViewMatrix();
 
@@ -714,7 +964,8 @@ void applicationLoop() {
 
 
 		DrawModels();
-
+		SetUpColisionMeshes();
+		//RenderColliders();
 		glfwSwapBuffers(window);
 	}
 }
