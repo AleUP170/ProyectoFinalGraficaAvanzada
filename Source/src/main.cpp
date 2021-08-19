@@ -251,7 +251,7 @@ int lastMousePosY, offsetY = 0;
 glm::mat4 modelMatrixFountain = glm::mat4(1.0f);
 
 std::map<std::string, glm::vec3> blendingUnsorted = {
-		{"fountain", glm::vec3(5.0, 0.0, -40.0)}
+		{"fountain", glm::vec3(0.0, 0.0, 20.0)}
 };
 
 double deltaTime;
@@ -279,10 +279,69 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 	int mode);
 void mouseCallback(GLFWwindow *window, double xpos, double ypos);
 void mouseButtonCallback(GLFWwindow *window, int button, int state, int mod);
+void initParticleBuffer();
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void init(int width, int height, std::string strTitle, bool bFullScreen);
 void destroy();
 bool processInput(bool continueApplication = true);
+
+void initParticleBuffer() {
+	//Ganerar los buffers
+	glGenBuffers(1, &initVel);
+	glGenBuffers(1, &startTime);
+
+	//Almacenar el espacion de los buffers
+	int size = nParticles * 3 * sizeof(float);
+	glBindBuffer(GL_ARRAY_BUFFER, initVel);
+	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, startTime);
+	glBufferData(GL_ARRAY_BUFFER, nParticles * sizeof(float), NULL, GL_STATIC_DRAW);
+
+	//Llenar los datos del Buffer para la velocidad inicial de cada particula (Velocidades aleatorias)
+	glm::vec3 v(0.0f);
+	float velocity, theta, phi;
+	GLfloat* data = new GLfloat[nParticles * 3];
+	for (unsigned int i = 0; i < nParticles; i++) {
+		theta = glm::mix(0.0f, glm::pi<float>() / 6.0f, ((float)rand() / RAND_MAX));
+		phi = glm::mix(0.0f, glm::two_pi<float>(), ((float)rand() / RAND_MAX));
+		v.x = sinf(theta) * cosf(phi);
+		v.y = cosf(theta); //Genera forma de cono si se comente
+		v.z = sinf(theta) * sinf(phi);
+		velocity = glm::mix(0.0f, 0.8f, ((float)rand() / RAND_MAX));
+		v = glm::normalize(v) * velocity;
+		data[i * 3] = v.x;
+		data[i * 3 + 1] = v.y;
+		data[i * 3 + 2] = v.z;
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, initVel);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+
+	//Llenar el buffer de tiempo
+	delete[] data;
+	data = new GLfloat[nParticles];
+	float time = 0.0f;
+	float rate = 0.00075f;
+	for (unsigned int i = 0; i < nParticles; i++) {
+		data[i] = time;
+		time += rate;
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, startTime);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, nParticles * sizeof(float), data);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	delete[] data;
+
+	glGenVertexArrays(1, &VAOParticles);
+	glBindVertexArray(VAOParticles);
+	glBindBuffer(GL_ARRAY_BUFFER, initVel);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, startTime);
+	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 0, NULL);
+	glEnableVertexAttribArray(1);
+
+	glBindVertexArray(0);
+}
 
 void LoadModels() {
 	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
@@ -579,6 +638,42 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	// Libera la memoria de la textura
 	textureTerrainBlendMap.freeImage(bitmap);
 
+
+	// Definiendo la textura a utilizar
+	Texture textureParticlesFountain("../Assets/Textures/blueWater.png");
+	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
+	bitmap = textureParticlesFountain.loadImage(true);
+	// Convertimos el mapa de bits en un arreglo unidimensional de tipo unsigned char
+	data = textureParticlesFountain.convertToData(bitmap, imageWidth,
+		imageHeight);
+	// Creando la textura con id 1
+	glGenTextures(1, &textureParticleFountainID);
+	// Enlazar esa textura a una tipo de textura de 2D.
+	glBindTexture(GL_TEXTURE_2D, textureParticleFountainID);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// Verifica si se pudo abrir la textura
+	if (data) {
+		// Transferis los datos de la imagen a memoria
+		// Tipo de textura, Mipmaps, Formato interno de openGL, ancho, alto, Mipmaps,
+		// Formato interno de la libreria de la imagen, el tipo de dato y al apuntador
+		// a los datos
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0,
+			GL_BGRA, GL_UNSIGNED_BYTE, data);
+		// Generan los niveles del mipmap (OpenGL es el ecargado de realizarlos)
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+		std::cout << "Failed to load texture" << std::endl;
+	// Libera la memoria de la textura
+	textureParticlesFountain.freeImage(bitmap);
+
+	// Inizializar los buffers del sistema de particulas
+	initParticleBuffer();
 }
 void DestroyModels() {
 	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
@@ -621,11 +716,18 @@ void destroy() {
 	glDeleteTextures(1, &textureTerrainGID);
 	glDeleteTextures(1, &textureTerrainBID);
 	glDeleteTextures(1, &textureTerrainBlendMapID);
+	glDeleteTextures(1, &textureParticleFountainID);
 
 	DestroyModels();
 	// Cube Maps Delete
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	glDeleteTextures(1, &skyboxTextureID);
+	// Eliminar los buffers del sistema de particulas
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glDeleteBuffers(1, &initVel);
+	glDeleteBuffers(1, &startTime);
+	glBindVertexArray(0);
+	glDeleteVertexArrays(1, &VAOParticles);
 }
 
 
@@ -997,6 +1099,58 @@ void SetUpColisionMeshes() {
 		}
 	}
 }
+
+void Particulas() {
+	/**********
+	* Update the position with alpha objects
+	*/
+
+	/**********
+	 * Sorter with alpha objects
+	 */
+	std::map<float, std::pair<std::string, glm::vec3>> blendingSorted;
+	std::map<std::string, glm::vec3>::iterator itblend;
+	for (itblend = blendingUnsorted.begin(); itblend != blendingUnsorted.end(); itblend++) {
+		float distanceFromView = glm::length(camera->getPosition() - itblend->second);
+		blendingSorted[distanceFromView] = std::make_pair(itblend->first, itblend->second);
+	}
+
+	/**********
+	 * Render de las transparencias
+	 */
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_CULL_FACE);
+	for (std::map<float, std::pair<std::string, glm::vec3> >::reverse_iterator it = blendingSorted.rbegin(); it != blendingSorted.rend(); it++) {
+		if (it->second.first.compare("fountain") == 0) {
+			// Render del sistema de particulas
+			glm::mat4 modelMatrixParticlesFountain = glm::mat4(1.0);
+			modelMatrixParticlesFountain = glm::translate(modelMatrixParticlesFountain, it->second.second);
+			modelMatrixParticlesFountain[3][1] = terrain.getHeightTerrain(modelMatrixParticlesFountain[3][0], modelMatrixParticlesFountain[3][2]) + 4.5;
+			modelMatrixParticlesFountain = glm::scale(modelMatrixParticlesFountain, glm::vec3(3.2f, 3.2f, 3.2f));
+			currTimeParticlesAnimation = TimeManager::Instance().GetTime();
+			if (currTimeParticlesAnimation - lastTimeParticlesAnimation > 20.0) {
+				lastTimeParticlesAnimation = currTimeParticlesAnimation;
+			}
+			glDepthMask(GL_FALSE);
+			glPointSize(10.0f);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, textureParticleFountainID);
+			shaderParticlesFountain.turnOn();
+			shaderParticlesFountain.setFloat("Time", float(currTimeParticlesAnimation - lastTimeParticlesAnimation));
+			shaderParticlesFountain.setFloat("ParticleLifetime", 10.5f);
+			shaderParticlesFountain.setInt("ParticleTex", 0);
+			shaderParticlesFountain.setVectorFloat3("Gravity", glm::value_ptr(glm::vec3(0.0f, -0.1f, 0.0f)));
+			shaderParticlesFountain.setMatrix4("model", 1, false, glm::value_ptr(modelMatrixParticlesFountain));
+			glBindVertexArray(VAOParticles);
+			glDrawArrays(GL_POINTS, 0, nParticles);
+			glDepthMask(true);
+			shaderParticlesFountain.turnOff();
+		}
+	}
+	glEnable(GL_CULL_FACE);
+}
+
 void RenderColliders() {
 	for (std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >::iterator it =
 		collidersOBB.begin(); it != collidersOBB.end(); it++) {
@@ -1028,6 +1182,10 @@ void applicationLoop() {
 	glm::vec3 axis;
 	glm::vec3 target;
 	float angleTarget;
+
+	modelMatrixFountain = glm::translate(modelMatrixFountain, glm::vec3(0.0, 0.0, 20.0));
+	modelMatrixFountain[3][1] = terrain.getHeightTerrain(modelMatrixFountain[3][0], modelMatrixFountain[3][2]) + 0.2;
+	modelMatrixFountain = glm::scale(modelMatrixFountain, glm::vec3(10.0f, 10.0f, 10.0f));
 
 	lastTime = TimeManager::Instance().GetTime();
 	while (psi) {
@@ -1163,6 +1321,7 @@ void applicationLoop() {
 
 
 		DrawModels();
+		Particulas();
 		SetUpColisionMeshes();
 		RenderColliders();
 		glfwSwapBuffers(window);
