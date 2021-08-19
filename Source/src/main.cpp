@@ -255,7 +255,7 @@ int lastMousePosY, offsetY = 0;
 glm::mat4 modelMatrixFountain = glm::mat4(1.0f);
 
 std::map<std::string, glm::vec3> blendingUnsorted = {
-		{"fountain", glm::vec3(0.0, 0.0, 20.0)}
+		{"fountain", glm::vec3(0.0, 0.0, 10.0)}
 };
 
 double deltaTime;
@@ -980,7 +980,7 @@ void DrawModels() {
 	}*/
 	//// Para cambiar las alturas de las frutas solo es cambiando el valor que se suma cuando se calcula y
 	// Render de Cherrys
-	for (int i = 0; i < cherryPosition.size(); i++) {
+	/*for (int i = 0; i < cherryPosition.size(); i++) {
 		cherryPosition[i].y = terrain.getHeightTerrain(cherryPosition[i].x, cherryPosition[i].z) + 3;
 		modelos.at("Cherry").model.setPosition(cherryPosition[i]);
 		modelos.at("Cherry").model.setScale(glm::vec3(1.0, 1.0, 1.0));
@@ -1009,7 +1009,7 @@ void DrawModels() {
 		modelos.at("Watermelon").model.setPosition(sandiaPosition[i]);
 		modelos.at("Watermelon").model.setScale(glm::vec3(1.0, 1.0, 1.0));
 		modelos.at("Watermelon").model.render();
-	}
+	}*/
 
 	// Render de bancas 
 	/*for (int i = 0; i < bancaPosition.size(); i++) {
@@ -1162,13 +1162,13 @@ void Particulas() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
 	for (std::map<float, std::pair<std::string, glm::vec3> >::reverse_iterator it = blendingSorted.rbegin(); it != blendingSorted.rend(); it++) {
-		if (it->second.first.compare("fountain") == 0) {
+		if (it->second.first.compare("fountain") == 0) { //MODIFICAR LA POSICIÓN DE LA FUENTE EN EL MAP blendingSorted
 			// Render del sistema de particulas
 			glm::mat4 modelMatrixParticlesFountain = glm::mat4(1.0);
 			modelMatrixParticlesFountain = glm::translate(modelMatrixParticlesFountain, it->second.second);
-			modelMatrixParticlesFountain[3][1] = terrain.getHeightTerrain(modelMatrixParticlesFountain[3][0], modelMatrixParticlesFountain[3][2]) + 4.5;
+			modelMatrixParticlesFountain[3][1] = terrain.getHeightTerrain(modelMatrixParticlesFountain[3][0], modelMatrixParticlesFountain[3][2]) + 3.5; // DISTACIA A PARTIR DEL MODELO
 			modelMatrixParticlesFountain = glm::scale(modelMatrixParticlesFountain, glm::vec3(3.2f, 3.2f, 3.2f));
-			currTimeParticlesAnimation = TimeManager::Instance().GetTime();
+			currTimeParticlesAnimation = TimeManager::Instance().GetTime();//DURACIÓN
 			if (currTimeParticlesAnimation - lastTimeParticlesAnimation > 20.0) {
 				lastTimeParticlesAnimation = currTimeParticlesAnimation;
 			}
@@ -1178,9 +1178,9 @@ void Particulas() {
 			glBindTexture(GL_TEXTURE_2D, textureParticleFountainID);
 			shaderParticlesFountain.turnOn();
 			shaderParticlesFountain.setFloat("Time", float(currTimeParticlesAnimation - lastTimeParticlesAnimation));
-			shaderParticlesFountain.setFloat("ParticleLifetime", 10.5f);
+			shaderParticlesFountain.setFloat("ParticleLifetime", 10.5f);//TIEMPO DE VIDA
 			shaderParticlesFountain.setInt("ParticleTex", 0);
-			shaderParticlesFountain.setVectorFloat3("Gravity", glm::value_ptr(glm::vec3(0.0f, -0.1f, 0.0f)));
+			shaderParticlesFountain.setVectorFloat3("Gravity", glm::value_ptr(glm::vec3(0.0f, 0.1f, 0.0f))); //DIRECCION DE LAS PARTICULAS
 			shaderParticlesFountain.setMatrix4("model", 1, false, glm::value_ptr(modelMatrixParticlesFountain));
 			glBindVertexArray(VAOParticles);
 			glDrawArrays(GL_POINTS, 0, nParticles);
