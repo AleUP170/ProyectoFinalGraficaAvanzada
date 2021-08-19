@@ -7,7 +7,7 @@ in vec2 TexCoord;
 
 layout ( location = 0 ) out vec4 FragColor;
 
-uniform vec3 coloHumo
+uniform vec3 coloHumo;
 
 void main()
 {

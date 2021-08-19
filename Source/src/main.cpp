@@ -7,6 +7,10 @@
 #include <string>
 #include <iostream>
 
+// contains new std::shuffle definition
+#include <algorithm>
+#include <random>
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
@@ -57,7 +61,7 @@ public:
 	int animation_index = 0;
 	glm::vec3 modelScale = glm::vec3(1.0f);
 	Tipocolision colision = noColision;
-	float rota = 0.0f;
+
 
 	GameObject(std::string locationModel) {
 		this->modelLocation = locationModel;
@@ -132,6 +136,10 @@ Shader shaderSkybox;
 Shader shaderMulLighting;
 //Shader para el terreno
 Shader shaderTerrain;
+//Shader para sistema particulas
+Shader shaderParticlesFountain;
+//Shader para las particulas de fuego
+Shader shaderParticlesFire;
 
 //Mapeo controles
 std::map<std::string, Controller> mapasControles{
@@ -139,20 +147,82 @@ std::map<std::string, Controller> mapasControles{
 	{ "Xbox", Controller(2, 5, 0, 1, 1, 2) }
 };
 
-//	Modelos
+//	Modelos sin colliders
 std::map<std::string, GameObject> modelos {
-	{"Raccoon",GameObject("../Assets/models/Racoon/Raccoon.fbx", glm::vec3(0.0005f,0.0005f,0.0005f),SBBCol)}
+	{"Raccoon",GameObject("../Assets/Models/Racoon/Racoon.fbx", glm::vec3(.0005f,.0005f,.0005f),SBBCol)},
+	{"Tree",GameObject("../Assets/Models/trees/tree.obj")},
+	{"Cerezo",GameObject("../Assets/Models/trees/cherry.obj")},
+	{"Cherry",GameObject("../Assets/Models/frutas/Cherry.fbx")},
+	{"Pear",GameObject("../Assets/Models/frutas/Pear.fbx")},
+	{"Pineapple",GameObject("../Assets/Models/frutas/Pineapple.fbx")},
+	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx")},
+	{"banco",GameObject("../Assets/Models/wooden/banco.obj")},
+	{"mesa",GameObject("../Assets/Models/wooden/mesaparque.obj")},
+	{"tronco",GameObject("../Assets/Models/wooden/tronco.obj")},
+	{"rock1",GameObject("../Assets/Models/rocks/rock1.obj")},
+	{"rock4",GameObject("../Assets/Models/rocks/rock4.obj")},
+	{"rock7",GameObject("../Assets/Models/rocks/rock7.obj")},
+	{"rock10",GameObject("../Assets/Models/rocks/rock10.obj")}
 };
 
+//	Modelos que necesitaran colliders 
+std::map<std::string, GameObject> modelosCollider{
+	{"Cherry",GameObject("../Assets/Models/frutas/Cherry.fbx", SBBCol)},
+	{"Pear",GameObject("../Assets/Models/frutas/Pear.fbx", SBBCol)},
+	{"Pineapple",GameObject("../Assets/Models/frutas/Pineapple.fbx", SBBCol)},
+	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx", SBBCol)}
+};
+
+/*	Para los colliders, es necesario agregar los arreglos de las posisiones de 
+	los modelos dentro de vector colisiones, el cual se localiza dentro de la función SetUpColisionMeshes.
+	Las posiciones de los arreglos deben corresponder con la posisión del los objetos.
+*/
+/************************************
+		Posisiones de modelo
+*************************************/
+//// Para cambiar las alturas de las frutas 
+//*** Posiciones de frutas ***//
+//	CHERRY
+std::vector<glm::vec3> cherryPosition = { glm::vec3(1, 0.0, 0) };
+//	PERA
+std::vector<glm::vec3> peraPosition = { glm::vec3(1, 0.0, 1) };
+//	PIÑA
+std::vector<glm::vec3> pinAppPosition = { glm::vec3(-1, 0.0, -1) };
+//	SANDIA
+std::vector<glm::vec3> sandiaPosition = { glm::vec3(0, 0.0, 0) };
+//*** Posiciones de arboles ***//
+//	Tree
+std::vector<glm::vec3> treePosition = { glm::vec3(0, 0, 0) };
+//	cerezo
+std::vector<glm::vec3> cerezoPosition = { glm::vec3(0, 0, 0) };
+//*** Posisiones de banca(o)s ***//
+//	Banca
+std::vector<glm::vec3> bancaPosition = { glm::vec3(0, 0, 5) };
+//	Mesa
+std::vector<glm::vec3> mesaPosition = { glm::vec3(0, 0, 10) };
+//	tronco
+std::vector<glm::vec3> troncoPosition = { glm::vec3(0, 0, 15) };
+//	banco
+std::vector<glm::vec3> bancoPosition = { glm::vec3(0, 0, 20) };
+
+//*** Posisiones de rocas ***//
+//	Rock 1
+std::vector<glm::vec3> rock1Position = { glm::vec3(0, 0, 25) };
+//	Rock 4
+std::vector<glm::vec3> rock4Position = { glm::vec3(0, 0, 5) };
+//	Rock 7
+std::vector<glm::vec3> rock7Position = { glm::vec3(0, 0, 10) };
+//	Rock 10
+std::vector<glm::vec3> rock10Position = { glm::vec3(0, 0, 15) };
+
+
 //variables player
-float speed = 0.5f;
+float speed = 1.0f;
 bool isJumping = false;
 float heightTerrainJump = 0.0f;
 float verticalSpeedJump = 10.0f;
 double timeJump = 0.0f;
 float gravity = 9.81f;
-Controller currentController;
-
 
 std::shared_ptr<Camera> camera(new ThirdPersonCamera());
 
@@ -162,6 +232,7 @@ Sphere skyboxSphere(20, 20);
 Terrain terrain(-1, -1, 200, 8, "../Assets/Textures/heightmap.png");
 
 GLuint textureTerrainBackgroundID, textureTerrainRID, textureTerrainGID, textureTerrainBID, textureTerrainBlendMapID;
+GLuint textureParticleFountainID, textureParticleFireID, texId;
 GLuint skyboxTextureID;
 
 GLenum types[6] = {
@@ -179,15 +250,37 @@ std::string fileNames[6] = { "../Assets/Textures/interstellar/xpos.png",
 		"../Assets/Textures/interstellar/zpos.png",
 		"../Assets/Textures/interstellar/zneg.png" };
 
-
 bool exitApp = false;
 int lastMousePosX, offsetX = 0;
 int lastMousePosY, offsetY = 0;
 
+// Model matrix definitions
+glm::mat4 modelMatrixFountain = glm::mat4(1.0f);
 
+std::map<std::string, glm::vec3> blendingUnsorted = {
+		{"fountain", glm::vec3(0.0, 0.0, 10.0)},
+		{"fire", glm::vec3(0.0, 0.0, 7.0)}
+};
 
 double deltaTime;
 double currTime, lastTime;
+
+//Define variables para el sistema de particulas de una fuente de agua
+GLuint initVel, startTime;
+GLuint VAOParticles;
+GLuint nParticles = 7000;
+double currTimeParticlesAnimation = 0.0, lastTimeParticlesAnimation = 0.0;
+
+// Definition for the particle system fire
+GLuint initVelFire, startTimeFire;
+GLuint VAOParticlesFire;
+GLuint nParticlesFire = 2000;
+GLuint posBuf[2], velBuf[2], age[2];
+GLuint particleArray[2];
+GLuint feedback[2];
+GLuint drawBuf = 1;
+float particleSize = 0.5, particleLifetime = 3.0;
+double currTimeParticlesAnimationFire, lastTimeParticlesAnimationFire;
 
 float distanceFromTarget = 10.0;
 
@@ -205,14 +298,168 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 	int mode);
 void mouseCallback(GLFWwindow *window, double xpos, double ypos);
 void mouseButtonCallback(GLFWwindow *window, int button, int state, int mod);
+void initParticleBuffer();
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void init(int width, int height, std::string strTitle, bool bFullScreen);
 void destroy();
 bool processInput(bool continueApplication = true);
 
+void initParticleBuffer() {
+	//Ganerar los buffers
+	glGenBuffers(1, &initVel);
+	glGenBuffers(1, &startTime);
+
+	//Almacenar el espacion de los buffers
+	int size = nParticles * 3 * sizeof(float);
+	glBindBuffer(GL_ARRAY_BUFFER, initVel);
+	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, startTime);
+	glBufferData(GL_ARRAY_BUFFER, nParticles * sizeof(float), NULL, GL_STATIC_DRAW);
+
+	//Llenar los datos del Buffer para la velocidad inicial de cada particula (Velocidades aleatorias)
+	glm::vec3 v(0.0f);
+	float velocity, theta, phi;
+	GLfloat* data = new GLfloat[nParticles * 3];
+	for (unsigned int i = 0; i < nParticles; i++) {
+		theta = glm::mix(0.0f, glm::pi<float>() / 6.0f, ((float)rand() / RAND_MAX));
+		phi = glm::mix(0.0f, glm::two_pi<float>(), ((float)rand() / RAND_MAX));
+		v.x = sinf(theta) * cosf(phi);
+		v.y = cosf(theta); //Genera forma de cono si se comente
+		v.z = sinf(theta) * sinf(phi);
+		velocity = glm::mix(0.0f, 0.8f, ((float)rand() / RAND_MAX));
+		v = glm::normalize(v) * velocity;
+		data[i * 3] = v.x;
+		data[i * 3 + 1] = v.y;
+		data[i * 3 + 2] = v.z;
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, initVel);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+
+	//Llenar el buffer de tiempo
+	delete[] data;
+	data = new GLfloat[nParticles];
+	float time = 0.0f;
+	float rate = 0.00075f;
+	for (unsigned int i = 0; i < nParticles; i++) {
+		data[i] = time;
+		time += rate;
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, startTime);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, nParticles * sizeof(float), data);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	delete[] data;
+
+	glGenVertexArrays(1, &VAOParticles);
+	glBindVertexArray(VAOParticles);
+	glBindBuffer(GL_ARRAY_BUFFER, initVel);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, startTime);
+	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 0, NULL);
+	glEnableVertexAttribArray(1);
+
+	glBindVertexArray(0);
+}
+
+void initParticleBuffersFire() {
+	// Generate the buffers
+	glGenBuffers(2, posBuf);    // position buffers
+	glGenBuffers(2, velBuf);    // velocity buffers
+	glGenBuffers(2, age);       // age buffers
+
+	// Allocate space for all buffers
+	int size = nParticlesFire * sizeof(GLfloat);
+	glBindBuffer(GL_ARRAY_BUFFER, posBuf[0]);
+	glBufferData(GL_ARRAY_BUFFER, 3 * size, 0, GL_DYNAMIC_COPY);
+	glBindBuffer(GL_ARRAY_BUFFER, posBuf[1]);
+	glBufferData(GL_ARRAY_BUFFER, 3 * size, 0, GL_DYNAMIC_COPY);
+	glBindBuffer(GL_ARRAY_BUFFER, velBuf[0]);
+	glBufferData(GL_ARRAY_BUFFER, 3 * size, 0, GL_DYNAMIC_COPY);
+	glBindBuffer(GL_ARRAY_BUFFER, velBuf[1]);
+	glBufferData(GL_ARRAY_BUFFER, 3 * size, 0, GL_DYNAMIC_COPY);
+	glBindBuffer(GL_ARRAY_BUFFER, age[0]);
+	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_COPY);
+	glBindBuffer(GL_ARRAY_BUFFER, age[1]);
+	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_COPY);
+
+	// Fill the first age buffer
+	std::vector<GLfloat> initialAge(nParticlesFire);
+	float rate = particleLifetime / nParticlesFire;
+	for (unsigned int i = 0; i < nParticlesFire; i++) {
+		int index = i - nParticlesFire;
+		float result = rate * index;
+		initialAge[i] = result;
+	}
+	// Shuffle them for better looking results
+	//Random::shuffle(initialAge);
+	auto rng = std::default_random_engine{};
+	std::shuffle(initialAge.begin(), initialAge.end(), rng);
+	glBindBuffer(GL_ARRAY_BUFFER, age[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, size, initialAge.data());
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// Create vertex arrays for each set of buffers
+	glGenVertexArrays(2, particleArray);
+
+	// Set up particle array 0
+	glBindVertexArray(particleArray[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, posBuf[0]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, velBuf[0]);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, age[0]);
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(2);
+
+	// Set up particle array 1
+	glBindVertexArray(particleArray[1]);
+	glBindBuffer(GL_ARRAY_BUFFER, posBuf[1]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, velBuf[1]);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, age[1]);
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(2);
+
+	glBindVertexArray(0);
+
+	// Setup the feedback objects
+	glGenTransformFeedbacks(2, feedback);
+
+	// Transform feedback 0
+	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, feedback[0]);
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, posBuf[0]);
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, velBuf[0]);
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 2, age[0]);
+
+	// Transform feedback 1
+	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, feedback[1]);
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, posBuf[1]);
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, velBuf[1]);
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 2, age[1]);
+
+	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, 0);
+}
 
 void LoadModels() {
 	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
+	{
+		it->second.model.loadModel(it->second.modelLocation);
+		it->second.model.setShader(&shaderMulLighting);
+		it->second.model.setOrientation(glm::vec3(1.0f));
+
+	}
+	for (std::map<std::string, GameObject>::iterator it = modelosCollider.begin(); it != modelosCollider.end(); ++it)
 	{
 		it->second.model.loadModel(it->second.modelLocation);
 		it->second.model.setShader(&shaderMulLighting);
@@ -285,9 +532,11 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	// Inicialización de los shaders
 	shader.initialize("../Shaders/colorShader.vs", "../Shaders/colorShader.fs");
-	shaderSkybox.initialize("../Shaders/skyBox.vs", "../Shaders/skyBox.fs");
-	shaderMulLighting.initialize("../Shaders/iluminacion_textura_animation.vs", "../Shaders/multipleLights.fs");
-	shaderTerrain.initialize("../Shaders/terrain.vs", "../Shaders/terrain.fs");
+	shaderSkybox.initialize("../Shaders/skyBox.vs", "../Shaders/skyBox_fog.fs");
+	shaderMulLighting.initialize("../Shaders/iluminacion_textura_animation_fog.vs", "../Shaders/multipleLights_fog.fs");
+	shaderTerrain.initialize("../Shaders/terrain_fog.vs", "../Shaders/terrain_fog.fs");
+	shaderParticlesFountain.initialize("../Shaders/particlesFountain.vs", "../Shaders/particlesFountain.fs");
+	shaderParticlesFire.initialize("../Shaders/particlesSmoke.vs", "../Shaders/particlesSmoke.fs", { "Position", "Velocity", "Age" });
 
 	// Inicializacion de los objetos.
 	skyboxSphere.init();
@@ -498,9 +747,118 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	// Libera la memoria de la textura
 	textureTerrainBlendMap.freeImage(bitmap);
 
+
+	// Definiendo la textura a utilizar
+	Texture textureParticlesFountain("../Assets/Textures/blueWater.png");
+	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
+	bitmap = textureParticlesFountain.loadImage(true);
+	// Convertimos el mapa de bits en un arreglo unidimensional de tipo unsigned char
+	data = textureParticlesFountain.convertToData(bitmap, imageWidth,
+		imageHeight);
+	// Creando la textura con id 1
+	glGenTextures(1, &textureParticleFountainID);
+	// Enlazar esa textura a una tipo de textura de 2D.
+	glBindTexture(GL_TEXTURE_2D, textureParticleFountainID);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// Verifica si se pudo abrir la textura
+	if (data) {
+		// Transferis los datos de la imagen a memoria
+		// Tipo de textura, Mipmaps, Formato interno de openGL, ancho, alto, Mipmaps,
+		// Formato interno de la libreria de la imagen, el tipo de dato y al apuntador
+		// a los datos
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0,
+			GL_BGRA, GL_UNSIGNED_BYTE, data);
+		// Generan los niveles del mipmap (OpenGL es el ecargado de realizarlos)
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+		std::cout << "Failed to load texture" << std::endl;
+	// Libera la memoria de la textura
+	textureParticlesFountain.freeImage(bitmap);
+
+	Texture textureParticleFire("../Assets/Textures/fire.png");
+	bitmap = textureParticleFire.loadImage();
+	data = textureParticleFire.convertToData(bitmap, imageWidth, imageHeight);
+	glGenTextures(1, &textureParticleFireID);
+	glBindTexture(GL_TEXTURE_2D, textureParticleFireID);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0,
+			GL_BGRA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+		std::cout << "Failed to load texture" << std::endl;
+	textureParticleFire.freeImage(bitmap);
+
+	std::uniform_real_distribution<float> distr01 = std::uniform_real_distribution<float>(0.0f, 1.0f);
+	std::mt19937 generator;
+	std::random_device rd;
+	generator.seed(rd());
+	int size = nParticlesFire * 2;
+	std::vector<GLfloat> randData(size);
+	for( int i = 0; i < randData.size(); i++ ) {
+		randData[i] = distr01(generator);
+	}
+
+	glGenTextures(1, &texId);
+	glBindTexture(GL_TEXTURE_1D, texId);
+	glTexStorage1D(GL_TEXTURE_1D, 1, GL_R32F, size);
+	glTexSubImage1D(GL_TEXTURE_1D, 0, 0, size, GL_RED, GL_FLOAT, randData.data());
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	shaderParticlesFire.setInt("Pass", 1);
+	shaderParticlesFire.setInt("ParticleTex", 0);
+	shaderParticlesFire.setInt("RandomTex", 1);
+	shaderParticlesFire.setFloat("ParticleLifetime", particleLifetime);
+	shaderParticlesFire.setFloat("ParticleSize", particleSize);
+	shaderParticlesFire.setVectorFloat3("Accel", glm::value_ptr(glm::vec3(0.0f,0.1f,0.0f)));
+	shaderParticlesFire.setVectorFloat3("Emitter", glm::value_ptr(glm::vec3(0.0f)));
+
+	glm::mat3 basis;
+	glm::vec3 u, v, n;
+	v = glm::vec3(0,1,0);
+	n = glm::cross(glm::vec3(1,0,0), v);
+	if( glm::length(n) < 0.00001f ) {
+		n = glm::cross(glm::vec3(0,1,0), v);
+	}
+	u = glm::cross(v,n);
+	basis[0] = glm::normalize(u);
+	basis[1] = glm::normalize(v);
+	basis[2] = glm::normalize(n);
+	shaderParticlesFire.setMatrix3("EmitterBasis", 1, false, glm::value_ptr(basis));
+
+	/*******************************************
+	 * Inicializacion de los buffers de la fuente
+	 *******************************************/
+	initParticleBuffer();
+
+	/*******************************************
+	 * Inicializacion de los buffers del fuego
+	 *******************************************/
+	 //initParticleBuffersFire();
+	initParticleBuffersFire();
+
+	// Inizializar los buffers del sistema de particulas
+	initParticleBuffer();
 }
 void DestroyModels() {
 	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
+	{
+		it->second.model.destroy();
+	}
+	for (std::map<std::string, GameObject>::iterator it = modelosCollider.begin(); it != modelosCollider.end(); ++it)
 	{
 		it->second.model.destroy();
 	}
@@ -521,6 +879,8 @@ void destroy() {
 	shaderMulLighting.destroy();
 	shaderSkybox.destroy();
 	shaderTerrain.destroy();
+	shaderParticlesFountain.destroy();
+	shaderParticlesFire.destroy();
 
 	// Basic objects Delete
 	skyboxSphere.destroy();
@@ -535,11 +895,29 @@ void destroy() {
 	glDeleteTextures(1, &textureTerrainGID);
 	glDeleteTextures(1, &textureTerrainBID);
 	glDeleteTextures(1, &textureTerrainBlendMapID);
+	glDeleteTextures(1, &textureParticleFountainID);
+	glDeleteTextures(1, &textureParticleFireID);
+	glDeleteTextures(1, &texId);
 
 	DestroyModels();
 	// Cube Maps Delete
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	glDeleteTextures(1, &skyboxTextureID);
+	// Eliminar los buffers del sistema de particulas
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glDeleteBuffers(1, &initVel);
+	glDeleteBuffers(1, &startTime);
+	glBindVertexArray(0);
+	glDeleteVertexArrays(1, &VAOParticles);
+	// Remove the buffer of the fire particles
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glDeleteBuffers(2, posBuf);
+	glDeleteBuffers(2, velBuf);
+	glDeleteBuffers(2, age);
+	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, 0);
+	glDeleteTransformFeedbacks(2, feedback);
+	glBindVertexArray(0);
+	glDeleteVertexArrays(1, &VAOParticlesFire);
 }
 
 
@@ -567,17 +945,23 @@ void SetJumpVariables() {
 	heightTerrainJump = terrain.getHeightTerrain(modelos.at("Raccoon").transform[3][0] , modelos.at("Raccoon").transform[3][2]);
 	timeJump = TimeManager::Instance().GetTime();
 	isJumping = true;
-	modelos.at("Raccoon").animation_index = 3;
 }
 void GamePadLogic() {
 	int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
 	if (present == 1) {
+		glm::mat4 cameraTransform = glm::mat4(1.0f);
+		cameraTransform[3] = glm::vec4(camera->getPosition(),1);
+		
+		glm::mat4 inv = glm::inverse(cameraTransform);
+		inv = glm::rotate(inv, camera->getAngleAroundTarget(), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec3 cameraForward = glm::normalize(glm::vec3(inv[2]));
+		glm::vec3 x_axis = glm::cross(cameraForward,glm::vec3(0,1,0));
 		int axisCount;
 		const float *axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
 		int buttonCount;
 		const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
 
-		
+		Controller currentController;
 		if (glfwGetJoystickName(GLFW_JOYSTICK_1) == "Wireless Controller" && buttonCount == 18) {
 			currentController = mapasControles.at("PS4");
 			//std::cout << "PS4 " << std::endl;
@@ -587,56 +971,17 @@ void GamePadLogic() {
 			//std::cout << "xbox " << std::endl;
 		}
 		
-
-		modelos.at("Raccoon").animation_index = 1;
-		
-		
-		//Left stick Y
-		float angle = modelos.at("Raccoon").rota; 
-		int invAngle = 1;
-		if (axes[currentController.joystickL_Y] >= 0.1 || axes[currentController.joystickL_Y] <= -0.1) {
-			if (angle == modelos.at("Raccoon").rota)
-				angle = camera->getAngleAroundTarget();
-			if (axes[currentController.joystickL_Y] >= 0.1) {
-				angle += glm::radians(180.0f);
-				invAngle = -1;
-			}
-
-			glm::mat4 cameraTransform = glm::mat4(1.0f);
-			cameraTransform[3] = glm::vec4(camera->getPosition(), 1);
-
-			glm::mat4 inv = glm::inverse(cameraTransform);
-			inv = glm::rotate(inv, camera->getAngleAroundTarget(), glm::vec3(0.0f, 1.0f, 0.0f));
-			glm::vec3 cameraForward = glm::normalize(glm::vec3(inv[2]));
-			glm::vec3 x_axis = glm::cross(cameraForward, glm::vec3(0, 1, 0));
-			
-			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, cameraForward * axes[currentController.joystickL_Y] * speed *-1.0f);
-			modelos.at("Raccoon").animation_index = 4;
-
-		}
-
 		//Left stick X
 		if (axes[currentController.joystickL_X] >= 0.1 || axes[currentController.joystickL_X] <= -0.1) {
-			if (angle == modelos.at("Raccoon").rota)
-				angle = camera->getAngleAroundTarget();
-			angle += glm::radians(-90 * axes[currentController.joystickL_X] * invAngle);
-			
-			glm::mat4 cameraTransform = glm::mat4(1.0f);
-			cameraTransform[3] = glm::vec4(camera->getPosition(), 1);
-
-			glm::mat4 inv = glm::inverse(cameraTransform);
-			inv = glm::rotate(inv, camera->getAngleAroundTarget(), glm::vec3(0.0f, 1.0f, 0.0f));
-			glm::vec3 cameraForward = glm::normalize(glm::vec3(inv[2]));
-			glm::vec3 x_axis = glm::cross(cameraForward, glm::vec3(0, 1, 0));
 			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, x_axis * axes[currentController.joystickL_X] * speed);
 
-			modelos.at("Raccoon").rota = camera->getAngleAroundTarget() + glm::radians(90.0f * (axes[currentController.joystickL_X] * -1.0f));
-			modelos.at("Raccoon").animation_index = 4;
+		}
+		//Left stick Y
+		if (axes[currentController.joystickL_Y] >= 0.1 || axes[currentController.joystickL_Y] <= -0.1) {
+			
+			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, cameraForward * axes[currentController.joystickL_Y] * speed *-1.0f);
 
 		}
-		
-		modelos.at("Raccoon").rota = angle;
-
 		//Right stick X
 		if (axes[currentController.joystickR_X] >= 0.1 || axes[currentController.joystickR_X] <= -0.1) {
 			camera->mouseMoveCamera(axes[currentController.joystickR_X],0, deltaTime);
@@ -738,14 +1083,13 @@ bool processInput(bool continueApplication) {
 
 float tiroParabolico(float currentTerrainHeight) {
 	if (isJumping) {
+		std::cout << "is jumping " << std::endl;
 		double t = TimeManager::Instance().GetTime() - timeJump;
-		float yPos;
-		modelos.at("Raccoon").animation_index = 3;			
-		yPos = heightTerrainJump + (verticalSpeedJump * (float)t) - (0.5f * gravity *(float)t * (float)t);
-		if (yPos > currentTerrainHeight) {
+		std::cout << "time start jump" << timeJump << " deltaTime " << t <<std::endl;
+		float yPos = heightTerrainJump + (verticalSpeedJump * (float) t) - (0.5f * gravity *(float) t * (float)t);
+		std::cout << "jump height " << yPos << " terrain Height " << currentTerrainHeight << std::endl;
+		if (yPos > currentTerrainHeight)
 			return yPos;
-		}
-		modelos.at("Raccoon").animation_index = 1;
 		isJumping = false;
 
 	}
@@ -763,54 +1107,293 @@ void DrawModels() {
 	modelos.at("Raccoon").transform[3][1] = tiroParabolico(terrainHeight);
 	modelos.at("Raccoon").model.setAnimationIndex(modelos.at("Raccoon").animation_index);
 	glm::mat4 matrixRac = glm::scale(modelos.at("Raccoon").transform,modelos.at("Raccoon").modelScale);
-	matrixRac = glm::rotate(matrixRac,modelos.at("Raccoon").rota, glm::vec3(0, 1, 0));
-	
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 0, 1));
 	matrixRac = glm::rotate(matrixRac, glm::radians(180.0f), glm::vec3(0, 1, 0));
-	//std::cout << glm::to_string(matrixRac) << std::endl;
 
+	//std::cout << glm::to_string(matrixRac) << std::endl;
 	modelos.at("Raccoon").model.render(matrixRac);
 
+	/*// Render de arboles
+	for (int i = 0; i < treePosition.size(); i++) {
+		treePosition[i].y = terrain.getHeightTerrain(treePosition[i].x, treePosition[i].z);
+		modelos.at("Tree").model.setPosition(treePosition[i]);
+		modelos.at("Tree").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("Tree").model.render();
+	}
 
+	// Render de cerezos
+	for (int i = 0; i < cerezoPosition.size(); i++) {
+		//cerezoPosition[i].y = terrain.getHeightTerrain(cerezoPosition[i].x, cerezoPosition[i].z);
+		modelos.at("Cerezo").model.setPosition(cerezoPosition[i]);
+		modelos.at("Cerezo").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("Cerezo").model.render();
+	}*/
+	//// Para cambiar las alturas de las frutas solo es cambiando el valor que se suma cuando se calcula y
+	// Render de Cherrys
+	/*for (int i = 0; i < cherryPosition.size(); i++) {
+		cherryPosition[i].y = terrain.getHeightTerrain(cherryPosition[i].x, cherryPosition[i].z) + 3;
+		modelos.at("Cherry").model.setPosition(cherryPosition[i]);
+		modelos.at("Cherry").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("Cherry").model.render();
+	}
+
+	// Render de peras
+	for (int i = 0; i < peraPosition.size(); i++) {
+		peraPosition[i].y = terrain.getHeightTerrain(peraPosition[i].x, peraPosition[i].z) + 3;
+		modelos.at("Pear").model.setPosition(peraPosition[i]);
+		modelos.at("Pear").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("Pear").model.render();
+	}
+
+	// Render de piñas
+	for (int i = 0; i < pinAppPosition.size(); i++) {
+		pinAppPosition[i].y = terrain.getHeightTerrain(pinAppPosition[i].x, pinAppPosition[i].z) + 3;
+		modelos.at("Pineapple").model.setPosition(pinAppPosition[i]);
+		modelos.at("Pineapple").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("Pineapple").model.render();
+	}
+
+	// Render de Sandias
+	for (int i = 0; i < sandiaPosition.size(); i++) {
+		sandiaPosition[i].y = terrain.getHeightTerrain(sandiaPosition[i].x, sandiaPosition[i].z) + 3;
+		modelos.at("Watermelon").model.setPosition(sandiaPosition[i]);
+		modelos.at("Watermelon").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("Watermelon").model.render();
+	}*/
+
+	// Render de bancas 
+	/*for (int i = 0; i < bancaPosition.size(); i++) {
+		bancaPosition[i].y = terrain.getHeightTerrain(bancaPosition[i].x, bancaPosition[i].z);
+		modelos.at("banca").model.setPosition(bancaPosition[i]);
+		modelos.at("banca").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("banca").model.render();
+	}
+
+	// Render de mesas 
+	for (int i = 0; i < mesaPosition.size(); i++) {
+		mesaPosition[i].y = terrain.getHeightTerrain(mesaPosition[i].x, mesaPosition[i].z);
+		modelos.at("mesa").model.setPosition(mesaPosition[i]);
+		modelos.at("mesa").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("mesa").model.render();
+	}
+
+	// Render de tronco 
+	for (int i = 0; i < troncoPosition.size(); i++) {
+		troncoPosition[i].y = terrain.getHeightTerrain(troncoPosition[i].x, troncoPosition[i].z);
+		modelos.at("tronco").model.setPosition(troncoPosition[i]);
+		modelos.at("tronco").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("tronco").model.render();
+	}
+
+	// Render de bancos 
+	for (int i = 0; i < bancoPosition.size(); i++) {
+		bancoPosition[i].y = terrain.getHeightTerrain(bancoPosition[i].x, bancoPosition[i].z);
+		modelos.at("banco").model.setPosition(bancoPosition[i]);
+		modelos.at("banco").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("banco").model.render();
+	}*/
+
+	// Render de rocas
+	/*for (int i = 0; i < rock1Position.size(); i++) {
+		rock1Position[i].y = terrain.getHeightTerrain(rock1Position[i].x, rock1Position[i].z);
+		modelos.at("rock1").model.setPosition(rock1Position[i]);
+		modelos.at("rock1").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("rock1").model.render();
+	}
+
+	for (int i = 0; i < rock4Position.size(); i++) {
+		rock4Position[i].y = terrain.getHeightTerrain(rock4Position[i].x, rock4Position[i].z);
+		modelos.at("rock4").model.setPosition(rock4Position[i]);
+		modelos.at("rock4").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("rock4").model.render();
+	}
+
+	for (int i = 0; i < rock7Position.size(); i++) {
+		rock7Position[i].y = terrain.getHeightTerrain(rock7Position[i].x, rock7Position[i].z);
+		modelos.at("rock7").model.setPosition(rock7Position[i]);
+		modelos.at("rock7").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("rock7").model.render();
+	}
+
+	for (int i = 0; i < rock10Position.size(); i++) {
+		rock10Position[i].y = terrain.getHeightTerrain(rock10Position[i].x, rock10Position[i].z);
+		modelos.at("rock10").model.setPosition(rock10Position[i]);
+		modelos.at("rock10").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelos.at("rock10").model.render();
+	}*/
 }
 void SetUpColisionMeshes() {
 	std::map<std::string, GameObject>::iterator it;
 	glm::mat4 matrix;
 	AbstractModel::OBB obbCollider;
 	AbstractModel::SBB sbbCollider;
+	// Agregar los arreglos de los modelos que necesitan colliders
+	std::vector<std::vector<glm::vec3>> colisiones = { cherryPosition, peraPosition, pinAppPosition, sandiaPosition };
+	int jt; // iterador del vector con las posiisones de los modelos (colisiones)
 	for (it = modelos.begin(); it != modelos.end(); it++) {
 		if (it->second.active) {
 			switch (it->second.colision) {
-			case OBBCol:
-				//std::cout << "Setting OBB collider for " << it->first << std::endl;
-				matrix = it->second.transform;
-				matrix = glm::scale(matrix, it->second.modelScale);
-				obbCollider.u = glm::quat_cast(it->second.transform);
-				matrix = glm::translate(matrix, it->second.model.getObb().c);
-				obbCollider.c = glm::vec3(matrix[3]);
-				obbCollider.e = it->second.model.getObb().e *it->second.modelScale * 100.0f;
-				addOrUpdateColliders(collidersOBB, it->first, obbCollider, it->second.transform);
-				break;
-			case SBBCol:
-				//std::cout << "Setting SBB collider for " << it->first << std::endl;
-				matrix = it->second.transform;
-				matrix = glm::scale(matrix, it->second.modelScale);
-				matrix = glm::translate(matrix,
-					glm::vec3(it->second.model.getSbb().c));
-				sbbCollider.c = glm::vec3(matrix[3]);
-				sbbCollider.ratio = it->second.model.getSbb().ratio *it->second.modelScale.x * 50.0f;
-				addOrUpdateColliders(collidersSBB, it->first, sbbCollider, it->second.transform);
-				break;
-			case noColision:
-				break;
+				case OBBCol:
+					std::cout << "Setting OBB collider for " << it->first << std::endl;
+					matrix = it->second.transform;
+					matrix = glm::scale(matrix, it->second.modelScale);
+					obbCollider.u = glm::quat_cast(it->second.transform);
+					matrix = glm::translate(matrix, it->second.model.getObb().c);
+					obbCollider.c = glm::vec3(matrix[3]);
+					obbCollider.e = it->second.model.getObb().e *it->second.modelScale * 100.0f;
+					addOrUpdateColliders(collidersOBB, it->first, obbCollider, it->second.transform);
+					break;
+				case SBBCol:
+					std::cout << "Setting SBB collider for " << it->first << std::endl;
+					matrix = it->second.transform;
+					matrix = glm::scale(matrix, it->second.modelScale);
+					matrix = glm::translate(matrix, glm::vec3(it->second.model.getSbb().c));
+					sbbCollider.c = glm::vec3(matrix[3]);
+					sbbCollider.ratio = it->second.model.getSbb().ratio *it->second.modelScale.x * 50.0f;
+					addOrUpdateColliders(collidersSBB, it->first, sbbCollider, it->second.transform);
+					break;
+				case noColision:
+					break;
+			}
+		}
+	}
+	for (it = modelosCollider.begin(), jt = 0 ; it != modelosCollider.end() && jt < colisiones.size(); it++, jt++) {
+		if (it->second.active) {
+			switch (it->second.colision) {
+				case OBBCol:
+					for (int i = 0; i < colisiones[jt].size(); i++) {
+						std::cout << "Setting OBB collider for " << it->first + std::to_string(i) << std::endl;
+						matrix = it->second.transform;
+						matrix = glm::translate(matrix, colisiones[jt][i]);
+						obbCollider.u = glm::quat_cast(it->second.transform);
+						matrix = glm::scale(matrix, it->second.modelScale);
+						matrix = glm::translate(matrix, it->second.model.getObb().c);
+						obbCollider.c = glm::vec3(matrix[3]);
+						obbCollider.e = it->second.model.getObb().e * it->second.modelScale;
+						addOrUpdateColliders(collidersOBB, it->first + std::to_string(i), obbCollider, it->second.transform);
+					}
+					break;
+				case SBBCol:
+					for (int i = 0; i < colisiones[jt].size(); i++) {
+						std::cout << "Setting SBB collider for " << it->first + std::to_string(i) << std::endl;
+						matrix = it->second.transform;
+						matrix = glm::translate(matrix, colisiones[jt][i]);
+						matrix = glm::scale(matrix, it->second.modelScale);
+						matrix = glm::translate(matrix, it->second.model.getSbb().c);
+						sbbCollider.c = glm::vec3(matrix[3]);
+						sbbCollider.ratio = it->second.model.getSbb().ratio * 1.0;
+						addOrUpdateColliders(collidersSBB, it->first + std::to_string(i), sbbCollider, it->second.transform);
+					}
+					break;
 			}
 		}
 	}
 }
+
+void Particulas() {
+	/**********
+	* Update the position with alpha objects
+	*/
+
+	/**********
+	 * Sorter with alpha objects
+	 */
+	std::map<float, std::pair<std::string, glm::vec3>> blendingSorted;
+	std::map<std::string, glm::vec3>::iterator itblend;
+	for (itblend = blendingUnsorted.begin(); itblend != blendingUnsorted.end(); itblend++) {
+		float distanceFromView = glm::length(camera->getPosition() - itblend->second);
+		blendingSorted[distanceFromView] = std::make_pair(itblend->first, itblend->second);
+	}
+
+	/**********
+	 * Render de las transparencias
+	 */
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_CULL_FACE);
+	for (std::map<float, std::pair<std::string, glm::vec3> >::reverse_iterator it = blendingSorted.rbegin(); it != blendingSorted.rend(); it++) {
+		if (it->second.first.compare("fountain") == 0) { //MODIFICAR LA POSICIÓN DE LA FUENTE EN EL MAP blendingSorted
+			// Render del sistema de particulas
+			glm::mat4 modelMatrixParticlesFountain = glm::mat4(1.0);
+			modelMatrixParticlesFountain = glm::translate(modelMatrixParticlesFountain, it->second.second);
+			modelMatrixParticlesFountain[3][1] = terrain.getHeightTerrain(modelMatrixParticlesFountain[3][0], modelMatrixParticlesFountain[3][2]) + 3.5; // DISTACIA A PARTIR DEL MODELO
+			modelMatrixParticlesFountain = glm::scale(modelMatrixParticlesFountain, glm::vec3(3.2f, 3.2f, 3.2f));
+			currTimeParticlesAnimation = TimeManager::Instance().GetTime();//DURACIÓN
+			if (currTimeParticlesAnimation - lastTimeParticlesAnimation > 20.0) {
+				lastTimeParticlesAnimation = currTimeParticlesAnimation;
+			}
+			glDepthMask(GL_FALSE);
+			glPointSize(10.0f);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, textureParticleFountainID);
+			shaderParticlesFountain.turnOn();
+			shaderParticlesFountain.setFloat("Time", float(currTimeParticlesAnimation - lastTimeParticlesAnimation));
+			shaderParticlesFountain.setFloat("ParticleLifetime", 10.5f);//TIEMPO DE VIDA
+			shaderParticlesFountain.setInt("ParticleTex", 0);
+			shaderParticlesFountain.setVectorFloat3("Gravity", glm::value_ptr(glm::vec3(0.0f, 0.1f, 0.0f))); //DIRECCION DE LAS PARTICULAS
+			shaderParticlesFountain.setMatrix4("model", 1, false, glm::value_ptr(modelMatrixParticlesFountain));
+			glBindVertexArray(VAOParticles);
+			glDrawArrays(GL_POINTS, 0, nParticles);
+			glDepthMask(true);
+			shaderParticlesFountain.turnOff();
+		}
+		else if (it->second.first.compare("fire") == 0) {
+			/**********
+			* Init Render particles systems
+			*/
+			lastTimeParticlesAnimationFire = currTimeParticlesAnimationFire;
+			currTimeParticlesAnimationFire = TimeManager::Instance().GetTime();
+
+			shaderParticlesFire.setInt("Pass", 1);
+			shaderParticlesFire.setFloat("Time", currTimeParticlesAnimationFire);
+			shaderParticlesFire.setFloat("DeltaT", currTimeParticlesAnimationFire - lastTimeParticlesAnimationFire);
+
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_1D, texId);
+			glEnable(GL_RASTERIZER_DISCARD);
+			glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, feedback[drawBuf]);
+			glBeginTransformFeedback(GL_POINTS);
+			glBindVertexArray(particleArray[1-drawBuf]);
+			glVertexAttribDivisor(0,0);
+			glVertexAttribDivisor(1,0);
+			glVertexAttribDivisor(2,0);
+			glDrawArrays(GL_POINTS, 0, nParticlesFire);
+			glEndTransformFeedback();
+			glDisable(GL_RASTERIZER_DISCARD);
+
+			shaderParticlesFire.setInt("Pass", 2);
+			glm::mat4 modelFireParticles = glm::mat4(1.0);
+			modelFireParticles = glm::translate(modelFireParticles, it->second.second);
+			modelFireParticles[3][1] = terrain.getHeightTerrain(modelFireParticles[3][0], modelFireParticles[3][2]);
+			shaderParticlesFire.setMatrix4("model", 1, false, glm::value_ptr(modelFireParticles));
+			shaderParticlesFire.setVectorFloat3("colorHumo", glm::value_ptr(glm::vec3(0.1, 0.1, 0.1)));
+
+			shaderParticlesFire.turnOn();
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, textureParticleFireID);
+			glDepthMask(GL_FALSE);
+			glBindVertexArray(particleArray[drawBuf]);
+			glVertexAttribDivisor(0,1);
+			glVertexAttribDivisor(1,1);
+			glVertexAttribDivisor(2,1);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, nParticlesFire);
+			glBindVertexArray(0);
+			glDepthMask(GL_TRUE);
+			drawBuf = 1 - drawBuf;
+			shaderParticlesFire.turnOff();
+
+			/**********
+			 * End Render particles systems
+			 */
+		}
+	}
+	glEnable(GL_CULL_FACE);
+}
+
 void RenderColliders() {
 	for (std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >::iterator it =
 		collidersOBB.begin(); it != collidersOBB.end(); it++) {
-		//std::cout << "Rendering collider OBB for " << it->first << std::endl;
+		std::cout << "Rendering collider OBB for " << it->first << std::endl;
 		glm::mat4 matrixCollider = glm::mat4(1.0);
 		matrixCollider = glm::translate(matrixCollider, std::get<0>(it->second).c);
 		matrixCollider = matrixCollider * glm::mat4(std::get<0>(it->second).u);
@@ -821,7 +1404,7 @@ void RenderColliders() {
 	}
 	for (std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >::iterator it =
 		collidersSBB.begin(); it != collidersSBB.end(); it++) {
-		//std::cout << "Rendering collider SBB for " << it->first << std::endl;
+		std::cout << "Rendering collider SBB for " << it->first << std::endl;
 		glm::mat4 matrixCollider = glm::mat4(1.0);
 		matrixCollider = glm::translate(matrixCollider, std::get<0>(it->second).c);
 		matrixCollider = glm::scale(matrixCollider, glm::vec3(std::get<0>(it->second).ratio * 2.0f));
@@ -838,6 +1421,19 @@ void applicationLoop() {
 	glm::vec3 axis;
 	glm::vec3 target;
 	float angleTarget;
+
+	lastTime = TimeManager::Instance().GetTime();
+
+	// Time for the particles animation
+	currTimeParticlesAnimation = lastTime;
+	lastTimeParticlesAnimation = lastTime;
+
+	currTimeParticlesAnimationFire = lastTime;
+	lastTimeParticlesAnimationFire = lastTime;
+
+	modelMatrixFountain = glm::translate(modelMatrixFountain, glm::vec3(0.0, 0.0, 20.0));
+	modelMatrixFountain[3][1] = terrain.getHeightTerrain(modelMatrixFountain[3][0], modelMatrixFountain[3][2]) + 0.2;
+	modelMatrixFountain = glm::scale(modelMatrixFountain, glm::vec3(10.0f, 10.0f, 10.0f));
 
 	lastTime = TimeManager::Instance().GetTime();
 	while (psi) {
@@ -880,8 +1476,21 @@ void applicationLoop() {
 			glm::value_ptr(projection));
 		shaderTerrain.setMatrix4("view", 1, false,
 			glm::value_ptr(view));
+		// Settea la matriz de vista y projection al shader del sistema de particulas
+		shaderParticlesFountain.setMatrix4("projection", 1, false,
+			glm::value_ptr(projection));
+		shaderParticlesFountain.setMatrix4("view", 1, false,
+			glm::value_ptr(view));
+		// Settea la matriz de vista y projection al shader para el fuego
+		shaderParticlesFire.setMatrix4("projection", 1, false, glm::value_ptr(projection));
+		shaderParticlesFire.setMatrix4("view", 1, false, glm::value_ptr(view));
 
-		
+		/*******************************************
+		 * Propiedades de neblina
+		 *******************************************/
+		shaderMulLighting.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderTerrain.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderSkybox.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
 
 		/*******************************************
 		 * Propiedades Luz direccional
@@ -911,7 +1520,6 @@ void applicationLoop() {
 		 *******************************************/
 		shaderMulLighting.setInt("pointLightCount", 0);
 		shaderTerrain.setInt("pointLightCount",0);
-
 
 		/*******************************************
 		 * Terrain Cesped
@@ -964,8 +1572,9 @@ void applicationLoop() {
 
 
 		DrawModels();
+		Particulas();
 		SetUpColisionMeshes();
-		//RenderColliders();
+		RenderColliders();
 		glfwSwapBuffers(window);
 	}
 }
