@@ -592,7 +592,13 @@ void GamePadLogic() {
 		
 		
 		//Left stick Y
+		float angle = camera->getAngleAroundTarget();
+		int invAngle = 1;
 		if (axes[currentController.joystickL_Y] >= 0.1 || axes[currentController.joystickL_Y] <= -0.1) {
+			if (axes[currentController.joystickL_Y] >= 0.1) {
+				angle += glm::radians(180.0f);
+				invAngle = -1;
+			}
 
 			glm::mat4 cameraTransform = glm::mat4(1.0f);
 			cameraTransform[3] = glm::vec4(camera->getPosition(), 1);
@@ -602,15 +608,15 @@ void GamePadLogic() {
 			glm::vec3 cameraForward = glm::normalize(glm::vec3(inv[2]));
 			glm::vec3 x_axis = glm::cross(cameraForward, glm::vec3(0, 1, 0));
 			
-			modelos.at("Raccoon").rota = camera->getAngleAroundTarget();
 			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, cameraForward * axes[currentController.joystickL_Y] * speed *-1.0f);
-
 			modelos.at("Raccoon").animation_index = 4;
 
 		}
 
 		//Left stick X
 		if (axes[currentController.joystickL_X] >= 0.1 || axes[currentController.joystickL_X] <= -0.1) {
+			angle += glm::radians(-90 * axes[currentController.joystickL_X] * invAngle);
+			
 			glm::mat4 cameraTransform = glm::mat4(1.0f);
 			cameraTransform[3] = glm::vec4(camera->getPosition(), 1);
 
@@ -624,6 +630,11 @@ void GamePadLogic() {
 			modelos.at("Raccoon").animation_index = 4;
 
 		}
+		
+		
+		
+		modelos.at("Raccoon").rota = angle;
+
 		//Right stick X
 		if (axes[currentController.joystickR_X] >= 0.1 || axes[currentController.joystickR_X] <= -0.1) {
 			camera->mouseMoveCamera(axes[currentController.joystickR_X],0, deltaTime);
