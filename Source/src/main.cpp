@@ -1459,24 +1459,22 @@ void DrawModels() {
 		modelosCollider.at("Bush2").model.setOrientation(glm::vec3(0, bush2Orientations[i], 0));
 		modelosCollider.at("Bush2").model.render();
 	}
-	//////////////////////////////
-	// Arbustos 2
+
+	// Contorno Arbustos
 	for (int i = 0; i < bushBorderPositions.size(); i++) {
-		bushBorderPositions[i].y = terrain.getHeightTerrain(bushBorderPositions[i].x, bushBorderPositions[i].z);
 		modelosCollider.at("BushBorder").model.setPosition(bushBorderPositions[i]);
 		modelosCollider.at("BushBorder").model.setOrientation(glm::vec3(0, bushBorderOrientations[i], 0));
 		modelosCollider.at("BushBorder").model.render();
 	}
 
-	// Arbustos 2
-	/*for (int i = 0; i < bush1WallPositions.size(); i++) {
-		bush1WallPositions[i].y = terrain.getHeightTerrain(bush1WallPositions[i].x, bush1WallPositions[i].z);
+	// Paredes arbustos 1
+	for (int i = 0; i < bush1WallPositions.size(); i++) {
 		modelosCollider.at("Bush1Wall").model.setPosition(bush1WallPositions[i]);
 		modelosCollider.at("Bush1Wall").model.setOrientation(glm::vec3(0, bush1WallOrientations[i], 0));
 		modelosCollider.at("Bush1Wall").model.render();
 	}
 
-	// Arbustos 2
+	// Paredes arbustos 2
 	for (int i = 0; i < bush2WallPositions.size(); i++) {
 		bush2WallPositions[i].y = terrain.getHeightTerrain(bush2WallPositions[i].x, bush2WallPositions[i].z);
 		modelosCollider.at("Bush2Wall").model.setPosition(bush2WallPositions[i]);
@@ -1492,12 +1490,12 @@ void DrawModels() {
 		modelosCollider.at("Bench").model.render();
 	}
 
-	// Arbustos 2
+	// Arboles 2
 	for (int i = 0; i < treePositions.size(); i++) {
 		treePositions[i].y = terrain.getHeightTerrain(treePositions[i].x, treePositions[i].z);
 		modelosCollider.at("Tree").model.setPosition(treePositions[i]);
 		modelosCollider.at("Tree").model.render();
-	}*/
+	}
 }
 void SetUpColisionMeshes() {
 	std::map<std::string, GameObject>::iterator it;
