@@ -157,20 +157,7 @@ std::map<std::string, Controller> mapasControles{
 
 //	Modelos sin colliders
 std::map<std::string, GameObject> modelos {
-	{"Raccoon",GameObject("../Assets/Models/Racoon/Racoon.fbx", glm::vec3(.0005f,.0005f,.0005f),SBBCol)},
-	{"Tree",GameObject("../Assets/Models/trees/tree.obj")},
-	{"Cerezo",GameObject("../Assets/Models/trees/cherry.obj")},
-	{"Cherry",GameObject("../Assets/Models/frutas/Cherry.fbx")},
-	{"Pear",GameObject("../Assets/Models/frutas/Pear.fbx")},
-	{"Pineapple",GameObject("../Assets/Models/frutas/Pineapple.fbx")},
-	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx")},
-	{"banco",GameObject("../Assets/Models/wooden/banco.obj")},
-	{"mesa",GameObject("../Assets/Models/wooden/mesaparque.obj")},
-	{"tronco",GameObject("../Assets/Models/wooden/tronco.obj")},
-	{"rock1",GameObject("../Assets/Models/rocks/rock1.obj")},
-	{"rock4",GameObject("../Assets/Models/rocks/rock4.obj")},
-	{"rock7",GameObject("../Assets/Models/rocks/rock7.obj")},
-	{"rock10",GameObject("../Assets/Models/rocks/rock10.obj")}
+	{"Raccoon",GameObject("../Assets/Models/Racoon/Racoon.fbx", glm::vec3(.0005f,.0005f,.0005f),SBBCol)}
 };
 
 //	Modelos que necesitaran colliders 
@@ -178,7 +165,9 @@ std::map<std::string, GameObject> modelosCollider{
 	{"Cherry",GameObject("../Assets/Models/frutas/Cherry.fbx", SBBCol)},
 	{"Pear",GameObject("../Assets/Models/frutas/Pear.fbx", SBBCol)},
 	{"Pineapple",GameObject("../Assets/Models/frutas/Pineapple.fbx", SBBCol)},
-	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx", SBBCol)}
+	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx", SBBCol)}, 
+	{"Bush1",GameObject("../Assets/models/Bush/Bush.fbx", OBBCol)},
+	{"Bush2",GameObject("../Assets/models/Bush/Bush2.fbx", glm::vec3(1.0f,0.5f,0.5f), OBBCol)},
 };
 
 /*	Para los colliders, es necesario agregar los arreglos de las posisiones de 
@@ -191,37 +180,13 @@ std::map<std::string, GameObject> modelosCollider{
 //// Para cambiar las alturas de las frutas 
 //*** Posiciones de frutas ***//
 //	CHERRY
-std::vector<glm::vec3> cherryPosition = { glm::vec3(1, 0.0, 0) };
+std::vector<glm::vec3> cherryPosition = { glm::vec3(0.0f, 0.0f, 5.0f) };
 //	PERA
 std::vector<glm::vec3> peraPosition = { glm::vec3(1, 0.0, 1) };
 //	PIÑA
 std::vector<glm::vec3> pinAppPosition = { glm::vec3(-1, 0.0, -1) };
 //	SANDIA
 std::vector<glm::vec3> sandiaPosition = { glm::vec3(0, 0.0, 0) };
-//*** Posiciones de arboles ***//
-//	Tree
-std::vector<glm::vec3> treePosition = { glm::vec3(0, 0, 0) };
-//	cerezo
-std::vector<glm::vec3> cerezoPosition = { glm::vec3(0, 0, 0) };
-//*** Posisiones de banca(o)s ***//
-//	Banca
-std::vector<glm::vec3> bancaPosition = { glm::vec3(0, 0, 5) };
-//	Mesa
-std::vector<glm::vec3> mesaPosition = { glm::vec3(0, 0, 10) };
-//	tronco
-std::vector<glm::vec3> troncoPosition = { glm::vec3(0, 0, 15) };
-//	banco
-std::vector<glm::vec3> bancoPosition = { glm::vec3(0, 0, 20) };
-
-//*** Posisiones de rocas ***//
-//	Rock 1
-std::vector<glm::vec3> rock1Position = { glm::vec3(0, 0, 25) };
-//	Rock 4
-std::vector<glm::vec3> rock4Position = { glm::vec3(0, 0, 5) };
-//	Rock 7
-std::vector<glm::vec3> rock7Position = { glm::vec3(0, 0, 10) };
-//	Rock 10
-std::vector<glm::vec3> rock10Position = { glm::vec3(0, 0, 15) };
 
 
 //variables player
@@ -1272,15 +1237,15 @@ void DrawModels() {
 	}*/
 	//// Para cambiar las alturas de las frutas solo es cambiando el valor que se suma cuando se calcula y
 	// Render de Cherrys
-	/*for (int i = 0; i < cherryPosition.size(); i++) {
+	for (int i = 0; i < cherryPosition.size(); i++) {
 		cherryPosition[i].y = terrain.getHeightTerrain(cherryPosition[i].x, cherryPosition[i].z) + 3;
-		modelos.at("Cherry").model.setPosition(cherryPosition[i]);
-		modelos.at("Cherry").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("Cherry").model.render();
+		modelosCollider.at("Cherry").model.setPosition(cherryPosition[i]);
+		modelosCollider.at("Cherry").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelosCollider.at("Cherry").model.render();
 	}
 
 	// Render de peras
-	for (int i = 0; i < peraPosition.size(); i++) {
+	/*for (int i = 0; i < peraPosition.size(); i++) {
 		peraPosition[i].y = terrain.getHeightTerrain(peraPosition[i].x, peraPosition[i].z) + 3;
 		modelos.at("Pear").model.setPosition(peraPosition[i]);
 		modelos.at("Pear").model.setScale(glm::vec3(1.0, 1.0, 1.0));
