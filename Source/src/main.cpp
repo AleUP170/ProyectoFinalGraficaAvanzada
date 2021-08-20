@@ -986,9 +986,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	alSourcei(source[2], AL_LOOPING, AL_TRUE);
 	alSourcef(source[2], AL_MAX_DISTANCE, 500);*/
 
-	// Se inicializa el modelo de texeles.
-	//modelText = new FontTypeRendering::FontTypeRendering(screenWidth, screenHeight);
-	//modelText->Initialize();
+	
 }
 void DestroyModels() {
 	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
@@ -1024,6 +1022,9 @@ void destroy() {
 
 	// Terrains objects Delete
 	terrain.destroy();
+
+	//borrado de modelo de texto
+	modelText->~FontTypeRendering();
 
 	// Textures Delete
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -1707,6 +1708,12 @@ void applicationLoop() {
 		glCullFace(oldCullFaceMode);
 		glDepthFunc(oldDepthFuncMode);
 
+		// Se inicializa el modelo de texeles.
+		//Creacion de objeto texto
+		modelText = new FontTypeRendering::FontTypeRendering(screenWidth, screenHeight);
+		modelText->Initialize();
+		//modelText->render(TEXTO, x, y, size, R, G, B  , Alpha);
+		modelText->render("HOLA", -0.1, -0.1, 40, 0.0, 0.0, 0.0, 1.0);
 
 		DrawModels();
 		Particulas();
