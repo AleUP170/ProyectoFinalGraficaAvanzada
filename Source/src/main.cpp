@@ -153,7 +153,7 @@ std::map<std::string, bool> collisionDetection;
 //Mapeo controles
 std::map<std::string, Controller> mapasControles{
 	{ "PS4", Controller(2, 5, 0, 1, 1, 2) },
-	{ "Xbox", Controller(2, 3, 0, 1, 1, 2) }
+	{ "Xbox", Controller(2, 5, 0, 1, 1, 2) }
 };
 
 //	Modelos sin colliders
@@ -1331,7 +1331,7 @@ void GamePadLogic() {
 
 		//Right stick X
 		if (axes[currentController.joystickR_X] >= 0.1 || axes[currentController.joystickR_X] <= -0.1) {
-			camera->mouseMoveCamera(axes[currentController.joystickR_X] * -1.5f, 0, deltaTime);
+			camera->mouseMoveCamera(axes[currentController.joystickR_X] * 1.5f, 0, deltaTime);
 
 		}
 		//Right stick Y
