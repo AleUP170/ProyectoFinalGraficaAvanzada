@@ -269,8 +269,8 @@ int lastMousePosY, offsetY = 0;
 glm::mat4 modelMatrixFountain = glm::mat4(1.0f);
 
 std::map<std::string, glm::vec3> blendingUnsorted = {
-		{"fountain", glm::vec3(0.0, 0.0, 10.0)},
-		{"fire", glm::vec3(0.0, 0.0, 7.0)}
+		{"fountain", glm::vec3(0.0, 0.0, 100.0)},
+		{"fire", glm::vec3(0.0, 0.0, 20.0)}
 };
 
 double deltaTime;
@@ -945,8 +945,8 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	// Generate buffers, or else no sound will happen!
 	alGenBuffers(NUM_BUFFERS, buffer);
 	buffer[0] = alutCreateBufferFromFile("../Assets/sounds/fountain.wav");
-	buffer[1] = alutCreateBufferFromFile("../Assets/sounds/fire.wav");
-	buffer[2] = alutCreateBufferFromFile("../Assets/sounds/darth_vader.wav");
+	buffer[1] = alutCreateBufferFromFile("../Assets/sounds/park.wav");
+	buffer[2] = alutCreateBufferFromFile("../Assets/sounds/gameloop.wav");
 	int errorAlut = alutGetError();
 	if (errorAlut != ALUT_ERROR_NO_ERROR) {
 		printf("- Error open files with alut %d !!\n", errorAlut);
@@ -969,7 +969,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	alSourcefv(source[0], AL_VELOCITY, source0Vel);
 	alSourcei(source[0], AL_BUFFER, buffer[0]);
 	alSourcei(source[0], AL_LOOPING, AL_TRUE);
-	alSourcef(source[0], AL_MAX_DISTANCE, 2000);
+	alSourcef(source[0], AL_MAX_DISTANCE, 500);
 
 	alSourcef(source[1], AL_PITCH, 1.0f);
 	alSourcef(source[1], AL_GAIN, 3.0f);
@@ -977,7 +977,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	alSourcefv(source[1], AL_VELOCITY, source1Vel);
 	alSourcei(source[1], AL_BUFFER, buffer[1]);
 	alSourcei(source[1], AL_LOOPING, AL_TRUE);
-	alSourcef(source[1], AL_MAX_DISTANCE, 2000);
+	alSourcef(source[1], AL_MAX_DISTANCE, 500);
 
 	alSourcef(source[2], AL_PITCH, 1.0f);
 	alSourcef(source[2], AL_GAIN, 0.3f);
@@ -1087,6 +1087,7 @@ void SetJumpVariables() {
 	timeJump = TimeManager::Instance().GetTime();
 	isJumping = true;
 }
+
 void GamePadLogic() {
 	int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
 	if (present == 1) {
@@ -1583,16 +1584,16 @@ void Sonidos() {
 	listenerOri[5] = upModel.z;
 
 	// Listener for the First person camera
-	/*listenerPos[0] = camera->getPosition().x;
-	 listenerPos[1] = camera->getPosition().y;
-	 listenerPos[2] = camera->getPosition().z;
-	 alListenerfv(AL_POSITION, listenerPos);
-	 listenerOri[0] = camera->getFront().x;
-	 listenerOri[1] = camera->getFront().y;
-	 listenerOri[2] = camera->getFront().z;
-	 listenerOri[3] = camera->getUp().x;
-	 listenerOri[4] = camera->getUp().y;
-	 listenerOri[5] = camera->getUp().z;*/
+	listenerPos[0] = camera->getPosition().x;
+	listenerPos[1] = camera->getPosition().y;
+	listenerPos[2] = camera->getPosition().z;
+	alListenerfv(AL_POSITION, listenerPos);
+	listenerOri[0] = camera->getFront().x;
+	listenerOri[1] = camera->getFront().y;
+	listenerOri[2] = camera->getFront().z;
+	listenerOri[3] = camera->getUp().x;
+	listenerOri[4] = camera->getUp().y;
+	listenerOri[5] = camera->getUp().z;
 	alListenerfv(AL_ORIENTATION, listenerOri);
 
 	for (unsigned int i = 0; i < sourcesPlay.size(); i++) {
@@ -1621,7 +1622,7 @@ void applicationLoop() {
 	currTimeParticlesAnimationFire = lastTime;
 	lastTimeParticlesAnimationFire = lastTime;
 
-	modelMatrixFountain = glm::translate(modelMatrixFountain, glm::vec3(0.0, 0.0, 20.0));
+	modelMatrixFountain = glm::translate(modelMatrixFountain, glm::vec3(0.0, 2.0, 100.0));
 	modelMatrixFountain[3][1] = terrain.getHeightTerrain(modelMatrixFountain[3][0], modelMatrixFountain[3][2]) + 0.2;
 	modelMatrixFountain = glm::scale(modelMatrixFountain, glm::vec3(10.0f, 10.0f, 10.0f));
 
@@ -1771,7 +1772,7 @@ void applicationLoop() {
 	}
 }
 int main(int argc, char **argv) {
-	init(800, 700, "Window GLFW", false);
+	init(1080, 720, "Raccoon City", false);
 	applicationLoop();
 	destroy();
 	return 1;
