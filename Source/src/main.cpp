@@ -142,6 +142,14 @@ std::map<std::string, Controller> mapasControles{
 //	Modelos
 std::map<std::string, GameObject> modelos {
 	{"Raccoon",GameObject("../Assets/models/Racoon/Raccoon.fbx", glm::vec3(0.0005f,0.0005f,0.0005f),SBBCol)},
+	{"Building",GameObject("../Assets/models/Building/Building.fbx", OBBCol)},
+	{"Fountain",GameObject("../Assets/models/Fountain/Fountain.fbx", OBBCol)},
+	{"Slide",GameObject("../Assets/models/Slide/Slide.fbx", OBBCol)},
+	{"Swing",GameObject("../Assets/models/Swing/swing.fbx", OBBCol)}
+};
+
+//	Modelos que necesitaran colliders 
+std::map<std::string, GameObject> modelosCollider{
 	{"Bush1",GameObject("../Assets/models/Bush/Bush.fbx", OBBCol)},
 	{"Bush2",GameObject("../Assets/models/Bush/Bush2.fbx", glm::vec3(1.0f,0.5f,0.5f), OBBCol)},
 	{"BushBorder",GameObject("../Assets/models/Bush/BushBorder.fbx", OBBCol)},
@@ -149,10 +157,10 @@ std::map<std::string, GameObject> modelos {
 	{"Bush2Wall",GameObject("../Assets/models/Bush/Bush2Wall.fbx", OBBCol)},
 	{"Bench",GameObject("../Assets/models/StoneBench/Bench.fbx", OBBCol)},
 	{"Tree",GameObject("../Assets/models/Trees/Tree.fbx", OBBCol)},
-	{"Building",GameObject("../Assets/models/Building/Building.fbx", OBBCol)},
-	{"Fountain",GameObject("../Assets/models/Fountain/Fountain.fbx", OBBCol)},
-	{"Slide",GameObject("../Assets/models/Slide/Slide.fbx", OBBCol)},
-	{"Swing",GameObject("../Assets/models/Swing/swing.fbx", OBBCol)},
+	{"Cherry",GameObject("../Assets/Models/frutas/Cherry.fbx", SBBCol)},
+	{"Pear",GameObject("../Assets/Models/frutas/Pear.fbx", SBBCol)},
+	{"Pineapple",GameObject("../Assets/Models/frutas/Pineapple.fbx", SBBCol)},
+	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx", SBBCol)}
 };
 
 //variables player
@@ -352,6 +360,15 @@ std::vector<glm::vec3> treePositions = {
 		glm::vec3(178.0f, 0, 35.0f),
 };
 
+//*** Posiciones de frutas ***//
+//	CHERRY
+std::vector<glm::vec3> cherryPosition = { glm::vec3(1, 0.0, 0) };
+//	PERA
+std::vector<glm::vec3> peraPosition = { glm::vec3(1, 0.0, 1) };
+//	PIÑA
+std::vector<glm::vec3> pinAppPosition = { glm::vec3(-1, 0.0, -1) };
+//	SANDIA
+std::vector<glm::vec3> sandiaPosition = { glm::vec3(0, 0.0, 0) };
 
 std::shared_ptr<Camera> camera(new ThirdPersonCamera());
 
@@ -1035,30 +1052,64 @@ void SetUpColisionMeshes() {
 	glm::mat4 matrix;
 	AbstractModel::OBB obbCollider;
 	AbstractModel::SBB sbbCollider;
+	// Agregar los arreglos de los modelos que necesitan colliders
+	std::vector<std::vector<glm::vec3>> colisiones = { bush1Positions, bush2Positions, bushBorderPositions, bush1WallPositions, bush2WallPositions,
+		benchPositions,	treePositions, cherryPosition, peraPosition, pinAppPosition, sandiaPosition };
+	int jt; // iterador del vector con las posiisones de los modelos (colisiones)
 	for (it = modelos.begin(); it != modelos.end(); it++) {
 		if (it->second.active) {
 			switch (it->second.colision) {
 			case OBBCol:
-				//std::cout << "Setting OBB collider for " << it->first << std::endl;
+				std::cout << "Setting OBB collider for " << it->first << std::endl;
 				matrix = it->second.transform;
 				matrix = glm::scale(matrix, it->second.modelScale);
 				obbCollider.u = glm::quat_cast(it->second.transform);
 				matrix = glm::translate(matrix, it->second.model.getObb().c);
 				obbCollider.c = glm::vec3(matrix[3]);
-				obbCollider.e = it->second.model.getObb().e *it->second.modelScale * 100.0f;
+				obbCollider.e = it->second.model.getObb().e * it->second.modelScale * 100.0f;
 				addOrUpdateColliders(collidersOBB, it->first, obbCollider, it->second.transform);
 				break;
 			case SBBCol:
-				//std::cout << "Setting SBB collider for " << it->first << std::endl;
+				std::cout << "Setting SBB collider for " << it->first << std::endl;
 				matrix = it->second.transform;
 				matrix = glm::scale(matrix, it->second.modelScale);
-				matrix = glm::translate(matrix,
-					glm::vec3(it->second.model.getSbb().c));
+				matrix = glm::translate(matrix, glm::vec3(it->second.model.getSbb().c));
 				sbbCollider.c = glm::vec3(matrix[3]);
-				sbbCollider.ratio = it->second.model.getSbb().ratio *it->second.modelScale.x * 50.0f;
+				sbbCollider.ratio = it->second.model.getSbb().ratio * it->second.modelScale.x * 50.0f;
 				addOrUpdateColliders(collidersSBB, it->first, sbbCollider, it->second.transform);
 				break;
 			case noColision:
+				break;
+			}
+		}
+	}
+	for (it = modelosCollider.begin(), jt = 0; it != modelosCollider.end() && jt < colisiones.size(); it++, jt++) {
+		if (it->second.active) {
+			switch (it->second.colision) {
+			case OBBCol:
+				for (int i = 0; i < colisiones[jt].size(); i++) {
+					std::cout << "Setting OBB collider for " << it->first + std::to_string(i) << std::endl;
+					matrix = it->second.transform;
+					matrix = glm::translate(matrix, colisiones[jt][i]);
+					obbCollider.u = glm::quat_cast(it->second.transform);
+					matrix = glm::scale(matrix, it->second.modelScale);
+					matrix = glm::translate(matrix, it->second.model.getObb().c);
+					obbCollider.c = glm::vec3(matrix[3]);
+					obbCollider.e = it->second.model.getObb().e * it->second.modelScale;
+					addOrUpdateColliders(collidersOBB, it->first + std::to_string(i), obbCollider, it->second.transform);
+				}
+				break;
+			case SBBCol:
+				for (int i = 0; i < colisiones[jt].size(); i++) {
+					std::cout << "Setting SBB collider for " << it->first + std::to_string(i) << std::endl;
+					matrix = it->second.transform;
+					matrix = glm::translate(matrix, colisiones[jt][i]);
+					matrix = glm::scale(matrix, it->second.modelScale);
+					matrix = glm::translate(matrix, it->second.model.getSbb().c);
+					sbbCollider.c = glm::vec3(matrix[3]);
+					sbbCollider.ratio = it->second.model.getSbb().ratio * 1.0;
+					addOrUpdateColliders(collidersSBB, it->first + std::to_string(i), sbbCollider, it->second.transform);
+				}
 				break;
 			}
 		}
