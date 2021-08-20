@@ -136,16 +136,27 @@ Shader shaderTerrain;
 //Mapeo controles
 std::map<std::string, Controller> mapasControles{
 	{ "PS4", Controller(2, 5, 0, 1, 1, 2) },
-	{ "Xbox", Controller(2, 5, 0, 1, 1, 2) }
+	{ "Xbox", Controller(2, 3, 0, 1, 1, 2) }
 };
 
 //	Modelos
 std::map<std::string, GameObject> modelos {
-	{"Raccoon",GameObject("../Assets/models/Racoon/Raccoon.fbx", glm::vec3(0.0005f,0.0005f,0.0005f),SBBCol)}
+	{"Raccoon",GameObject("../Assets/models/Racoon/Raccoon.fbx", glm::vec3(0.0005f,0.0005f,0.0005f),SBBCol)},
+	{"Bush1",GameObject("../Assets/models/Bush/Bush.fbx", OBBCol)},
+	{"Bush2",GameObject("../Assets/models/Bush/Bush2.fbx", glm::vec3(1.0f,0.5f,0.5f), OBBCol)},
+	{"BushBorder",GameObject("../Assets/models/Bush/BushBorder.fbx", OBBCol)},
+	{"Bush1Wall",GameObject("../Assets/models/Bush/Bush1Wall.fbx", OBBCol)},
+	{"Bush2Wall",GameObject("../Assets/models/Bush/Bush2Wall.fbx", OBBCol)},
+	{"Bench",GameObject("../Assets/models/StoneBench/Bench.fbx", OBBCol)},
+	{"Tree",GameObject("../Assets/models/Trees/Tree.fbx", OBBCol)},
+	{"Building",GameObject("../Assets/models/Building/Building.fbx", OBBCol)},
+	{"Fountain",GameObject("../Assets/models/Fountain/Fountain.fbx", OBBCol)},
+	{"Slide",GameObject("../Assets/models/Slide/Slide.fbx", OBBCol)},
+	{"Swing",GameObject("../Assets/models/Swing/swing.fbx", OBBCol)},
 };
 
 //variables player
-float speed = 0.5f;
+float speed = 0.3f;
 bool isJumping = false;
 float heightTerrainJump = 0.0f;
 float verticalSpeedJump = 10.0f;
@@ -153,13 +164,201 @@ double timeJump = 0.0f;
 float gravity = 9.81f;
 Controller currentController;
 
+// Posiciones arbustos 1
+std::vector<glm::vec3> bush1Positions = {
+		glm::vec3(93.0f, 0.0f, -13.0f),
+		glm::vec3(7.0f, 0.0f, 64.0f),
+		glm::vec3(92.0f, 0.0f, 142.0f),
+		glm::vec3(18.0f, 0.0f, -26.0f),
+		glm::vec3(-2.0f, 0.0f, -108.0f),
+};
+std::vector<float> bush1Orientations = {
+		0, 0, 0, 0, 0,
+};
+
+// Posiciones arbustos 2
+std::vector<glm::vec3> bush2Positions = {
+		glm::vec3(144.0f, 0, -29.0f),
+		glm::vec3(140.0f, 0, 82.0f),
+		glm::vec3(125.0f, 0, 183.0f),
+		glm::vec3(17.0f, 0, 177.0f),
+		glm::vec3(-6.0f, 0, 126.0f),
+};
+std::vector<float> bush2Orientations = {
+		0, 0, 0, 0, 0,
+};
+
+// Posiciones arbustos borde
+std::vector<glm::vec3> bushBorderPositions = {
+		glm::vec3(0, 0, -200),
+		glm::vec3(0, 0, 200),
+		glm::vec3(-200, 0, 0),
+		glm::vec3(200, 0, 0),
+};
+std::vector<float> bushBorderOrientations = {
+		0,
+		180,
+		90,
+		270,
+};
+
+// Posiciones paredes arbustos pequeños
+std::vector<glm::vec3> bush1WallPositions = {
+		glm::vec3(-28.0f, 0, -14.0f),
+		glm::vec3(-28.0f, 0, -92.0f),
+		glm::vec3(-78.0f, 0, -14.0f),
+		glm::vec3(-78.0f, 0, -92.0f),
+		glm::vec3(-6.0f, 0, -21.0f),
+		glm::vec3(-84.0f, 0, -21.0f),
+		glm::vec3(-6.0f, 0, -71.0f),
+		glm::vec3(-84.0f, 0, -71.0f),
+};
+std::vector<float> bush1WallOrientations = {
+		0, 0, 0, 0,
+		90, 90, 90, 90,
+};
+
+// Posiciones paredes arbustos grandes
+std::vector<glm::vec3> bush2WallPositions = {
+		// Borde central
+		glm::vec3(9.0f, 0, -5.0f),
+		glm::vec3(-102.0f, 0, -5.0f),
+		glm::vec3(9.0f, 0, -70.0f),
+		glm::vec3(-102.0f, 0, -70.0f),
+		glm::vec3(-28.0f, 0, 2.0f),
+		glm::vec3(-28.0f, 0, -110.0f),
+		glm::vec3(-95.0f, 0, 2.0f),
+		glm::vec3(-95.0f, 0, -110.0f),
+
+		glm::vec3(-31.0f, 0, -110.0f),
+
+		// Pasillo
+		glm::vec3(-31.0f, 0, 42.0f),
+		glm::vec3(-31.0f, 0, 69.0f),
+		glm::vec3(-31.0f, 0, 106.0f),
+		glm::vec3(-31.0f, 0, 133.0f),
+		glm::vec3(-31.0f, 0, 153.0f),
+
+		glm::vec3(-59.0f, 0, 42.0f),
+		glm::vec3(-59.0f, 0, 50.0f),
+		glm::vec3(-59.0f, 0, 106.0f),
+		glm::vec3(-59.0f, 0, 133.0f),
+		glm::vec3(-59.0f, 0, 163.0f),
+
+		// Cancha
+		glm::vec3(-66.0f, 0, 50.0f),
+		glm::vec3(-66.0f, 0, 127.0f),
+		glm::vec3(-66.0f, 0, 105.0f),
+
+		glm::vec3(-137.0f, 0, 50.0f),
+		glm::vec3(-137.0f, 0, 127.0f),
+		glm::vec3(-137.0f, 0, 105.0f),
+
+		glm::vec3(-135.0f, 0, 20.0f),
+		glm::vec3(-97.0f, 0, 20.0f),
+		glm::vec3(-135.0f, 0, 131.0f),
+		glm::vec3(-97.0f, 0, 131.0f),
+
+		// Edificio
+		glm::vec3(12.0f, 0, -65.0f),
+		glm::vec3(12.0f, 0, -40.0f),
+		glm::vec3(42.0f, 0, -40.0f),
+		glm::vec3(72.0f, 0, -40.0f),
+
+		glm::vec3(83.0f, 0, -161.0f),
+		glm::vec3(118.0f, 0, -161.0f),
+
+		glm::vec3(82.0f, 0, -71.0f),
+		glm::vec3(82.0f, 0, -116.0f),
+
+		glm::vec3(152.0f, 0, -71.0f),
+		glm::vec3(152.0f, 0, -116.0f),
+
+};
+std::vector<float> bush2WallOrientations = {
+		90, 90, 90, 90,
+		0, 0, 0, 0,
+
+		90,
+
+		90, 90, 90, 90, 90,
+		90, 90, 90, 90, 90,
+
+		90, 90, 90,
+		90, 90, 90,
+		0, 0, 0, 0,
+
+		0, 0, 0, 0,
+		0, 0,
+		90, 90, 90, 90
+};
+
+// Posiciones bancas
+std::vector<glm::vec3> benchPositions = {
+		glm::vec3(-21.0f, 0, -31.0f),
+		glm::vec3(-69.0f, 0, -31.0f),
+		glm::vec3(-69.0f, 0, -77.0f),
+		glm::vec3(-21.0f, 0, -77.0f),
+		glm::vec3(-117.0f, 0, -113.0f),
+		glm::vec3(-106.0f, 0, -124.0f),
+
+		glm::vec3(-81.0f, 0, 165.0f),
+		glm::vec3(-114.0f, 0, 155.0f),
+
+		glm::vec3(-80.0f, 0, 113.0f),
+		glm::vec3(-100.0f, 0, 113.0f),
+		glm::vec3(-120.0f, 0, 113.0f),
+};
+std::vector<float> benchOrientations = {
+		45, 135, 45, 135,
+		0, 90,
+		0, -35,
+		0, 0, 0,
+};
+
+// Posiciones arboles
+std::vector<glm::vec3> treePositions = {
+		glm::vec3(-73.0f, 0, -80.0f),
+		glm::vec3(-24.0f, 0, -88.0f),
+		glm::vec3(-11.0f, 0, -71.0f),
+		glm::vec3(-21.0f, 0, -21.0f),
+		glm::vec3(-64.0f, 0, -20.0f),
+		glm::vec3(-78.0f, 0, -31.0f),
+		glm::vec3(-131.0f, 0, -139.0f),
+		glm::vec3(-137.0f, 0, -33.0f),
+		glm::vec3(-115.0f, 0, -37.0f),
+		glm::vec3(-66.0f, 0, 160.0f),
+		glm::vec3(-93.0f, 0, 142.0f),
+		glm::vec3(-127.0f, 0, 146.0f),
+		glm::vec3(-133.0f, 0, 170.0f),
+		glm::vec3(-143.0f, 0, 70.0f),
+		glm::vec3(-168.0f, 0, 44.0f),
+		glm::vec3(-140.0f, 0, 2.0f),
+		glm::vec3(-169.0f, 0, -85.0f),
+		glm::vec3(-170.0f, 0, -151.0f),
+		glm::vec3(-135.0f, 0, -180.0f),
+		glm::vec3(-100.0f, 0, -176.0f),
+		glm::vec3(45.0f, 0, -74.0f),
+		glm::vec3(17.0f, 0, -89.0f),
+		glm::vec3(-22.0f, 0, -126.0f),
+		glm::vec3(69.0f, 0, -154.0f),
+		glm::vec3(-11.0f, 0, 15.0f),
+		glm::vec3(-1.0f, 0, 131.0f),
+		glm::vec3(97.0f, 0, 1.0f),
+		glm::vec3(73.0f, 0, 37.0f),
+		glm::vec3(137.0f, 0, 79.0f),
+		glm::vec3(44.0f, 0, 137.0f),
+		glm::vec3(139.0f, 0, 34.0f),
+		glm::vec3(178.0f, 0, 35.0f),
+};
+
 
 std::shared_ptr<Camera> camera(new ThirdPersonCamera());
 
 Sphere skyboxSphere(20, 20);
 
 // Terrain model instance
-Terrain terrain(-1, -1, 200, 8, "../Assets/Textures/heightmap.png");
+Terrain terrain(-1, -1, 400, 8, "../Assets/Textures/heightmap.png");
 
 GLuint textureTerrainBackgroundID, textureTerrainRID, textureTerrainGID, textureTerrainBID, textureTerrainBlendMapID;
 GLuint skyboxTextureID;
@@ -203,6 +402,7 @@ Sphere sphereCollider(10, 10);
 void reshapeCallback(GLFWwindow *Window, int widthRes, int heightRes);
 void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 	int mode);
+void GamePadLogic();
 void mouseCallback(GLFWwindow *window, double xpos, double ypos);
 void mouseButtonCallback(GLFWwindow *window, int button, int state, int mod);
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
@@ -298,7 +498,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	terrain.init();
 	terrain.setShader(&shaderTerrain);
-	terrain.setPosition(glm::vec3(100, 0, 100));
+	terrain.setPosition(glm::vec3(200, 0, 200));
 
 	camera->setSensitivity(1.0);
 	camera->setDistanceFromTarget(distanceFromTarget);
@@ -334,7 +534,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		skyboxTexture.freeImage(bitmap);
 	}
 	// Definiendo la textura a utilizar
-	Texture textureTerrainBackground("../Assets/Textures/grassy2.png");
+	Texture textureTerrainBackground("../Assets/Textures/Grass.png");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	bitmap = textureTerrainBackground.loadImage();
 	// Convertimos el mapa de bits en un arreglo unidimensional de tipo unsigned char
@@ -367,7 +567,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	textureTerrainBackground.freeImage(bitmap);
 
 	// Definiendo la textura a utilizar
-	Texture textureTerrainR("../Assets/Textures/mud.png");
+	Texture textureTerrainR("../Assets/Textures/Path.png");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	bitmap = textureTerrainR.loadImage();
 	// Convertimos el mapa de bits en un arreglo unidimensional de tipo unsigned char
@@ -400,7 +600,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	textureTerrainR.freeImage(bitmap);
 
 	// Definiendo la textura a utilizar
-	Texture textureTerrainG("../Assets/Textures/grassFlowers.png");
+	Texture textureTerrainG("../Assets/Textures/Dirt.png");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	bitmap = textureTerrainG.loadImage();
 	// Convertimos el mapa de bits en un arreglo unidimensional de tipo unsigned char
@@ -433,7 +633,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	textureTerrainG.freeImage(bitmap);
 
 	// Definiendo la textura a utilizar
-	Texture textureTerrainB("../Assets/Textures/path.png");
+	Texture textureTerrainB("../Assets/Textures/Cork.png");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	bitmap = textureTerrainB.loadImage();
 	// Convertimos el mapa de bits en un arreglo unidimensional de tipo unsigned char
@@ -601,10 +801,8 @@ void GamePadLogic() {
 			inv = glm::rotate(inv, camera->getAngleAroundTarget(), glm::vec3(0.0f, 1.0f, 0.0f));
 			glm::vec3 cameraForward = glm::normalize(glm::vec3(inv[2]));
 			glm::vec3 x_axis = glm::cross(cameraForward, glm::vec3(0, 1, 0));
-			
-			modelos.at("Raccoon").rota = camera->getAngleAroundTarget();
-			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, cameraForward * axes[currentController.joystickL_Y] * speed *-1.0f);
-
+			//modelos.at("Raccoon").rota = camera->getAngleAroundTarget() + glm::radians(90.0f - 90.0f*signbit(axes[currentController.joystickL_Y]));
+			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, cameraForward * axes[currentController.joystickL_Y] * speed);
 			modelos.at("Raccoon").animation_index = 4;
 
 		}
@@ -619,19 +817,18 @@ void GamePadLogic() {
 			glm::vec3 cameraForward = glm::normalize(glm::vec3(inv[2]));
 			glm::vec3 x_axis = glm::cross(cameraForward, glm::vec3(0, 1, 0));
 			modelos.at("Raccoon").transform = glm::translate(modelos.at("Raccoon").transform, x_axis * axes[currentController.joystickL_X] * speed);
-
 			modelos.at("Raccoon").rota = camera->getAngleAroundTarget() + glm::radians(90.0f * (axes[currentController.joystickL_X] * -1.0f));
 			modelos.at("Raccoon").animation_index = 4;
 
 		}
 		//Right stick X
 		if (axes[currentController.joystickR_X] >= 0.1 || axes[currentController.joystickR_X] <= -0.1) {
-			camera->mouseMoveCamera(axes[currentController.joystickR_X],0, deltaTime);
+			camera->mouseMoveCamera(axes[currentController.joystickR_X] * -1.5f , 0, deltaTime);
 
 		}
 		//Right stick Y
 		if (axes[currentController.joystickR_Y] >= 0.1 || axes[currentController.joystickR_Y] <= -0.1) {
-			camera->mouseMoveCamera(0,axes[currentController.joystickR_Y], deltaTime);
+			camera->mouseMoveCamera(0,axes[currentController.joystickR_Y] * 1.5f , deltaTime);
 		}
 		//L2
 		if (axes[3] != -1) {
@@ -745,9 +942,12 @@ void SetAnimationIndex() {
 	}
 }
 void DrawModels() {
+
+	// Mapache
 	SetAnimationIndex();
 	float terrainHeight = terrain.getHeightTerrain(modelos.at("Raccoon").transform[3][0], modelos.at("Raccoon").transform[3][2]);
 	modelos.at("Raccoon").transform[3][1] = tiroParabolico(terrainHeight);
+	printf("%f,%f,%f\n", modelos.at("Raccoon").transform[3][0], modelos.at("Raccoon").transform[3][1], modelos.at("Raccoon").transform[3][2]);
 	modelos.at("Raccoon").model.setAnimationIndex(modelos.at("Raccoon").animation_index);
 	glm::mat4 matrixRac = glm::scale(modelos.at("Raccoon").transform,modelos.at("Raccoon").modelScale);
 	matrixRac = glm::rotate(matrixRac,modelos.at("Raccoon").rota, glm::vec3(0, 1, 0));
@@ -758,8 +958,78 @@ void DrawModels() {
 
 	modelos.at("Raccoon").model.render(matrixRac);
 
+	// Edificio
+	glm::mat4 posBuild = glm::translate(modelos.at("Building").transform, glm::vec3(125.0f, 0.0f, -75.0f));
+	modelos.at("Building").model.render(posBuild);
 
+	// Fuente
+	glm::mat4 posFount = glm::translate(modelos.at("Fountain").transform, glm::vec3(-45.0f, 0.0f, -53.0f));
+	modelos.at("Fountain").model.render(posFount);
+	
+	// Resbaladilla
+	glm::mat4 posSlide = glm::translate(modelos.at("Slide").transform, glm::vec3(36.0f, 0.0f, -102.0f));
+	modelos.at("Slide").model.render(posSlide);
+
+	// Columpio
+	glm::mat4 posSwing = glm::translate(modelos.at("Swing").transform, glm::vec3(2.0f, 0.0f, -136.0f));
+	modelos.at("Swing").model.render(posSwing);
+
+	// Contorno Arbustos
+	for (int i = 0; i < bushBorderPositions.size(); i++) {
+		glm::mat4 posBush = glm::translate(modelos.at("BushBorder").transform, bushBorderPositions[i]);
+		posBush = glm::rotate(posBush, glm::radians(bushBorderOrientations[i]), glm::vec3(0, 1, 0));
+		modelos.at("BushBorder").model.render(posBush);
+	}
+
+	// Paredes arbustos 1
+	for (int i = 0; i < bush1WallPositions.size(); i++) {
+		glm::mat4 posBush = glm::translate(modelos.at("Bush1Wall").transform, bush1WallPositions[i]);
+		posBush = glm::rotate(posBush, glm::radians(bush1WallOrientations[i]), glm::vec3(0, 1, 0));
+		modelos.at("Bush1Wall").model.render(posBush);
+	}
+
+	// Paredes arbustos 2
+	for (int i = 0; i < bush2WallPositions.size(); i++) {
+		glm::mat4 posBush = glm::translate(modelos.at("Bush2Wall").transform, bush2WallPositions[i]);
+		posBush = glm::rotate(posBush, glm::radians(bush2WallOrientations[i]), glm::vec3(0, 1, 0));
+		modelos.at("Bush2Wall").model.render(posBush);
+	}
+
+	// Arbustos 1
+	for (int i = 0; i < bush1Positions.size(); i++) {
+		bush1Positions[i].y = terrain.getHeightTerrain(bush1Positions[i].x, bush1Positions[i].z);
+		glm::mat4 posBush = glm::translate(modelos.at("Bush1").transform, bush1Positions[i]);
+		posBush = glm::rotate(posBush, glm::radians(bush1Orientations[i]), glm::vec3(0, 1, 0));
+		modelos.at("Bush1").model.render(posBush);
+	}
+
+	// Arbustos 2
+	for (int i = 0; i < bush2Positions.size(); i++) {
+		bush2Positions[i].y = terrain.getHeightTerrain(bush2Positions[i].x, bush2Positions[i].z);
+		glm::mat4 posBush = glm::translate(modelos.at("Bush2").transform, bush2Positions[i]);
+		posBush = glm::scale(posBush, modelos.at("Bush2").modelScale);
+		posBush = glm::rotate(posBush, glm::radians(bush2Orientations[i]), glm::vec3(0, 1, 0));
+		modelos.at("Bush2").model.render(posBush);
+	}
+
+	// Bancas
+	for (int i = 0; i < benchPositions.size(); i++) {
+		benchPositions[i].y = terrain.getHeightTerrain(benchPositions[i].x, benchPositions[i].z);
+		glm::mat4 posBench = glm::translate(modelos.at("Bench").transform, benchPositions[i]);
+		posBench = glm::scale(posBench, modelos.at("Bench").modelScale);
+		posBench = glm::rotate(posBench, glm::radians(benchOrientations[i]), glm::vec3(0, 1, 0));
+		modelos.at("Bench").model.render(posBench);
+	}
+
+	// Arboles
+	for (int i = 0; i < treePositions.size(); i++) {
+		treePositions[i].y = terrain.getHeightTerrain(treePositions[i].x, treePositions[i].z);
+		glm::mat4 posTree = glm::translate(modelos.at("Bench").transform, treePositions[i]);
+		posTree = glm::scale(posTree, modelos.at("Bench").modelScale);
+		modelos.at("Tree").model.render(posTree);
+	}
 }
+
 void SetUpColisionMeshes() {
 	std::map<std::string, GameObject>::iterator it;
 	glm::mat4 matrix;
