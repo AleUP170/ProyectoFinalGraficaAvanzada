@@ -148,31 +148,21 @@ Shader shaderTerrain;
 Shader shaderParticlesFountain;
 //Shader para las particulas de fuego
 Shader shaderParticlesFire;
+std::map<std::string, bool> collisionDetection;
 
 //Mapeo controles
 std::map<std::string, Controller> mapasControles{
 	{ "PS4", Controller(2, 5, 0, 1, 1, 2) },
-	{ "Xbox", Controller(2, 5, 0, 1, 1, 2) }
+	{ "Xbox", Controller(2, 3, 0, 1, 1, 2) }
 };
 
 //	Modelos sin colliders
 std::map<std::string, GameObject> modelos {
-
 	{"Raccoon",GameObject("../Assets/Models/Racoon/Raccoon.fbx", glm::vec3(.0005f,.0005f,.0005f),SBBCol)},
-	{"Tree",GameObject("../Assets/Models/trees/tree.obj")},
-	{"Cerezo",GameObject("../Assets/Models/trees/cherry.obj")},
-	{"Cherry",GameObject("../Assets/Models/frutas/Cherry.fbx")},
-	{"Pear",GameObject("../Assets/Models/frutas/Pear.fbx")},
-	{"Pineapple",GameObject("../Assets/Models/frutas/Pineapple.fbx")},
-	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx")},
-	{"banco",GameObject("../Assets/Models/wooden/banco.obj")},
-	{"mesa",GameObject("../Assets/Models/wooden/mesaparque.obj")},
-	{"tronco",GameObject("../Assets/Models/wooden/tronco.obj")},
-	{"rock1",GameObject("../Assets/Models/rocks/rock1.obj")},
-	{"rock4",GameObject("../Assets/Models/rocks/rock4.obj")},
-	{"rock7",GameObject("../Assets/Models/rocks/rock7.obj")},
-	{"rock10",GameObject("../Assets/Models/rocks/rock10.obj")},
-	{"banca",GameObject("../Assets/Models/banca/banca.obj")}
+	{"Building",GameObject("../Assets/models/Building/Building.fbx", OBBCol)},
+	{"Fountain",GameObject("../Assets/models/Fountain/Fountain.fbx", OBBCol)},
+	{"Slide",GameObject("../Assets/models/Slide/Slide.fbx", OBBCol)},
+	{"Swing",GameObject("../Assets/models/Swing/swing.fbx", OBBCol)},
 };
 
 //	Modelos que necesitaran colliders 
@@ -180,7 +170,15 @@ std::map<std::string, GameObject> modelosCollider{
 	{"Cherry",GameObject("../Assets/Models/frutas/Cherry.fbx", SBBCol)},
 	{"Pear",GameObject("../Assets/Models/frutas/Pear.fbx", SBBCol)},
 	{"Pineapple",GameObject("../Assets/Models/frutas/Pineapple.fbx", SBBCol)},
-	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx", SBBCol)}
+	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx", SBBCol)},
+	{"Bush1",GameObject("../Assets/Models/Bush/Bush.fbx", OBBCol)},
+	{"Bush2",GameObject("../Assets/Models/Bush/Bush2.fbx", glm::vec3(1.0f,0.5f,0.5f), OBBCol)},
+	{"BushBorder",GameObject("../Assets/Models/Bush/BushBorder.fbx", OBBCol)},
+	{"Bush1Wall",GameObject("../Assets/Models/Bush/Bush1Wall.fbx", OBBCol)},
+	{"Bush2Wall",GameObject("../Assets/Models/Bush/Bush2Wall.fbx", OBBCol)},
+	{"Bench",GameObject("../Assets/Models/StoneBench/Bench.fbx", OBBCol)},
+	{"Tree",GameObject("../Assets/Models/Trees/Tree.fbx", OBBCol)},
+	{"Human", GameObject("../Assets/Models/Ranger/Ranger.fbx", OBBCol)}
 };
 
 /*	Para los colliders, es necesario agregar los arreglos de las posisiones de 
@@ -201,47 +199,218 @@ std::vector<glm::vec3> pinAppPosition = { glm::vec3(-1, 0.0, -1) };
 //	SANDIA
 std::vector<glm::vec3> sandiaPosition = { glm::vec3(0, 0.0, 0) };
 //*** Posiciones de arboles ***//
-//	Tree
-std::vector<glm::vec3> treePosition = { glm::vec3(0, 0, 0) };
-//	cerezo
-std::vector<glm::vec3> cerezoPosition = { glm::vec3(0, 0, 0) };
-//*** Posisiones de banca(o)s ***//
-//	Banca
-std::vector<glm::vec3> bancaPosition = { glm::vec3(0, 0, 5) };
-//	Mesa
-std::vector<glm::vec3> mesaPosition = { glm::vec3(0, 0, 10) };
-//	tronco
-std::vector<glm::vec3> troncoPosition = { glm::vec3(0, 0, 15) };
-//	banco
-std::vector<glm::vec3> bancoPosition = { glm::vec3(0, 0, 20) };
+// Posiciones arbustos 1
+std::vector<glm::vec3> bush1Positions = {
+		glm::vec3(93.0f, 0.0f, -13.0f),
+		glm::vec3(7.0f, 0.0f, 64.0f),
+		glm::vec3(92.0f, 0.0f, 142.0f),
+		glm::vec3(18.0f, 0.0f, -26.0f),
+		glm::vec3(-2.0f, 0.0f, -108.0f),
+};
+std::vector<float> bush1Orientations = {
+		0, 0, 0, 0, 0,
+};
 
-//*** Posisiones de rocas ***//
-//	Rock 1
-std::vector<glm::vec3> rock1Position = { glm::vec3(0, 0, 25) };
-//	Rock 4
-std::vector<glm::vec3> rock4Position = { glm::vec3(0, 0, 5) };
-//	Rock 7
-std::vector<glm::vec3> rock7Position = { glm::vec3(0, 0, 10) };
-//	Rock 10
-std::vector<glm::vec3> rock10Position = { glm::vec3(0, 0, 15) };
+// Posiciones arbustos 2
+std::vector<glm::vec3> bush2Positions = {
+		glm::vec3(144.0f, 0, -29.0f),
+		glm::vec3(140.0f, 0, 82.0f),
+		glm::vec3(125.0f, 0, 183.0f),
+		glm::vec3(17.0f, 0, 177.0f),
+		glm::vec3(-6.0f, 0, 126.0f),
+};
+std::vector<float> bush2Orientations = {
+		0, 0, 0, 0, 0,
+};
 
+// Posiciones arbustos borde
+std::vector<glm::vec3> bushBorderPositions = {
+		glm::vec3(0, 0, -200),
+		glm::vec3(0, 0, 200),
+		glm::vec3(-200, 0, 0),
+		glm::vec3(200, 0, 0)
+};
+std::vector<float> bushBorderOrientations = {
+		0,
+		180,
+		90,
+		270
+};
+
+// Posiciones paredes arbustos pequeï¿½os
+std::vector<glm::vec3> bush1WallPositions = {
+		glm::vec3(-28.0f, 0, -14.0f),
+		glm::vec3(-28.0f, 0, -92.0f),
+		glm::vec3(-78.0f, 0, -14.0f),
+		glm::vec3(-78.0f, 0, -92.0f),
+		glm::vec3(-6.0f, 0, -21.0f),
+		glm::vec3(-84.0f, 0, -21.0f),
+		glm::vec3(-6.0f, 0, -71.0f),
+		glm::vec3(-84.0f, 0, -71.0f),
+};
+std::vector<float> bush1WallOrientations = {
+		0, 0, 0, 0,
+		90, 90, 90, 90,
+};
+
+// Posiciones paredes arbustos grandes
+std::vector<glm::vec3> bush2WallPositions = {
+	// Borde central
+	glm::vec3(9.0f, 0, -5.0f),
+	glm::vec3(-102.0f, 0, -5.0f),
+	glm::vec3(9.0f, 0, -70.0f),
+	glm::vec3(-102.0f, 0, -70.0f),
+	glm::vec3(-28.0f, 0, 2.0f),
+	glm::vec3(-28.0f, 0, -110.0f),
+	glm::vec3(-95.0f, 0, 2.0f),
+	glm::vec3(-95.0f, 0, -110.0f),
+
+	glm::vec3(-31.0f, 0, -110.0f),
+
+	// Pasillo
+	glm::vec3(-31.0f, 0, 42.0f),
+	glm::vec3(-31.0f, 0, 69.0f),
+	glm::vec3(-31.0f, 0, 106.0f),
+	glm::vec3(-31.0f, 0, 133.0f),
+	glm::vec3(-31.0f, 0, 153.0f),
+
+	glm::vec3(-59.0f, 0, 42.0f),
+	glm::vec3(-59.0f, 0, 50.0f),
+	glm::vec3(-59.0f, 0, 106.0f),
+	glm::vec3(-59.0f, 0, 133.0f),
+	glm::vec3(-59.0f, 0, 163.0f),
+
+	// Cancha
+	glm::vec3(-66.0f, 0, 50.0f),
+	glm::vec3(-66.0f, 0, 127.0f),
+	glm::vec3(-66.0f, 0, 105.0f),
+
+	glm::vec3(-137.0f, 0, 50.0f),
+	glm::vec3(-137.0f, 0, 127.0f),
+	glm::vec3(-137.0f, 0, 105.0f),
+
+	glm::vec3(-135.0f, 0, 20.0f),
+	glm::vec3(-97.0f, 0, 20.0f),
+	glm::vec3(-135.0f, 0, 131.0f),
+	glm::vec3(-97.0f, 0, 131.0f),
+
+	// Edificio
+	glm::vec3(12.0f, 0, -65.0f),
+	glm::vec3(12.0f, 0, -40.0f),
+	glm::vec3(42.0f, 0, -40.0f),
+	glm::vec3(72.0f, 0, -40.0f),
+
+	glm::vec3(83.0f, 0, -161.0f),
+	glm::vec3(118.0f, 0, -161.0f),
+
+	glm::vec3(82.0f, 0, -71.0f),
+	glm::vec3(82.0f, 0, -116.0f),
+
+	glm::vec3(152.0f, 0, -71.0f),
+	glm::vec3(152.0f, 0, -116.0f),
+
+};
+std::vector<float> bush2WallOrientations = {
+		90, 90, 90, 90,
+		0, 0, 0, 0,
+
+		90,
+
+		90, 90, 90, 90, 90,
+		90, 90, 90, 90, 90,
+
+		90, 90, 90,
+		90, 90, 90,
+		0, 0, 0, 0,
+
+		0, 0, 0, 0,
+		0, 0,
+		90, 90, 90, 90
+};
+
+// Posiciones bancas
+std::vector<glm::vec3> benchPositions = {
+		glm::vec3(-21.0f, 0, -31.0f),
+		glm::vec3(-69.0f, 0, -31.0f),
+		glm::vec3(-69.0f, 0, -77.0f),
+		glm::vec3(-21.0f, 0, -77.0f),
+		glm::vec3(-117.0f, 0, -113.0f),
+		glm::vec3(-106.0f, 0, -124.0f),
+
+		glm::vec3(-81.0f, 0, 165.0f),
+		glm::vec3(-114.0f, 0, 155.0f),
+
+		glm::vec3(-80.0f, 0, 113.0f),
+		glm::vec3(-100.0f, 0, 113.0f),
+		glm::vec3(-120.0f, 0, 113.0f),
+};
+std::vector<float> benchOrientations = {
+		45, 135, 45, 135,
+		0, 90,
+		0, -35,
+		0, 0, 0,
+};
+
+// Posiciones arboles
+std::vector<glm::vec3> treePositions = {
+		glm::vec3(-73.0f, 0, -80.0f),
+		glm::vec3(-24.0f, 0, -88.0f),
+		glm::vec3(-11.0f, 0, -71.0f),
+		glm::vec3(-21.0f, 0, -21.0f),
+		glm::vec3(-64.0f, 0, -20.0f),
+		glm::vec3(-78.0f, 0, -31.0f),
+		glm::vec3(-131.0f, 0, -139.0f),
+		glm::vec3(-137.0f, 0, -33.0f),
+		glm::vec3(-115.0f, 0, -37.0f),
+		glm::vec3(-66.0f, 0, 160.0f),
+		glm::vec3(-93.0f, 0, 142.0f),
+		glm::vec3(-127.0f, 0, 146.0f),
+		glm::vec3(-133.0f, 0, 170.0f),
+		glm::vec3(-143.0f, 0, 70.0f),
+		glm::vec3(-168.0f, 0, 44.0f),
+		glm::vec3(-140.0f, 0, 2.0f),
+		glm::vec3(-169.0f, 0, -85.0f),
+		glm::vec3(-170.0f, 0, -151.0f),
+		glm::vec3(-135.0f, 0, -180.0f),
+		glm::vec3(-100.0f, 0, -176.0f),
+		glm::vec3(45.0f, 0, -74.0f),
+		glm::vec3(17.0f, 0, -89.0f),
+		glm::vec3(-22.0f, 0, -126.0f),
+		glm::vec3(69.0f, 0, -154.0f),
+		glm::vec3(-11.0f, 0, 15.0f),
+		glm::vec3(-1.0f, 0, 131.0f),
+		glm::vec3(97.0f, 0, 1.0f),
+		glm::vec3(73.0f, 0, 37.0f),
+		glm::vec3(137.0f, 0, 79.0f),
+		glm::vec3(44.0f, 0, 137.0f),
+		glm::vec3(139.0f, 0, 34.0f),
+		glm::vec3(178.0f, 0, 35.0f),
+};
+
+std::vector<glm::vec3> humanPositions = {
+		glm::vec3(-63.0f, 0, -83.0f),
+		glm::vec3(-4.0f, 0, 8.0f),
+		glm::vec3(11.0f, 0, 101.0f),
+		glm::vec3(61.0f, 0, 161.0f),
+		glm::vec3(104.0f, 0, -20.0f),
+};
 
 //variables player
-float speed = 0.5f;
+float speed = 0.3f;
 bool isJumping = false;
 float heightTerrainJump = 0.0f;
 float verticalSpeedJump = 10.0f;
 double timeJump = 0.0f;
 float gravity = 9.81f;
+int health = 100;
 Controller currentController;
-
 
 std::shared_ptr<Camera> camera(new ThirdPersonCamera());
 
 Sphere skyboxSphere(20, 20);
 
 // Terrain model instance
-Terrain terrain(-1, -1, 200, 8, "../Assets/Textures/heightmap.png");
+Terrain terrain(-1, -1, 400, 8, "../Assets/Textures/heightmap.png");
 
 GLuint textureTerrainBackgroundID, textureTerrainRID, textureTerrainGID, textureTerrainBID, textureTerrainBlendMapID;
 GLuint textureParticleFountainID, textureParticleFireID, texId;
@@ -273,8 +442,8 @@ int lastMousePosY, offsetY = 0;
 glm::mat4 modelMatrixFountain = glm::mat4(1.0f);
 
 std::map<std::string, glm::vec3> blendingUnsorted = {
-		{"fountain", glm::vec3(0.0, 0.0, 10.0)},
-		{"fire", glm::vec3(0.0, 0.0, 7.0)}
+		{"fountain", glm::vec3(-45.0f, 0.0f, -53.0f)},
+		{"fire", glm::vec3(0.0, 0.0, 20.0)}
 };
 
 double deltaTime;
@@ -347,6 +516,7 @@ Sphere sphereCollider(10, 10);
 void reshapeCallback(GLFWwindow *Window, int widthRes, int heightRes);
 void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 	int mode);
+void GamePadLogic();
 void mouseCallback(GLFWwindow *window, double xpos, double ypos);
 void mouseButtonCallback(GLFWwindow *window, int button, int state, int mod);
 void initParticleBuffers();
@@ -354,6 +524,7 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void init(int width, int height, std::string strTitle, bool bFullScreen);
 void destroy();
 bool processInput(bool continueApplication = true);
+void DrawTexto();
 
 void initParticleBuffers() {
 	
@@ -604,7 +775,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	terrain.init();
 	terrain.setShader(&shaderTerrain);
-	terrain.setPosition(glm::vec3(100, 0, 100));
+	terrain.setPosition(glm::vec3(200, 0, 200));
 
 	camera->setSensitivity(1.0);
 	camera->setDistanceFromTarget(distanceFromTarget);
@@ -706,7 +877,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	textureTerrainR.freeImage(bitmap);
 
 	// Definiendo la textura a utilizar
-	Texture textureTerrainG("../Assets/Textures/AutumnGrass.png");
+	Texture textureTerrainG("../Assets/Textures/Dirt.png");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	bitmap = textureTerrainG.loadImage();
 	// Convertimos el mapa de bits en un arreglo unidimensional de tipo unsigned char
@@ -916,10 +1087,10 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	glBindTexture(GL_TEXTURE_2D, depthMap);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);*/
+	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);*/
+	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 	float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
@@ -932,7 +1103,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	/*******************************************
 	 * OpenAL init
 	 *******************************************/
-	/*alutInit(0, nullptr);
+	alutInit(0, nullptr);
 	alListenerfv(AL_POSITION, listenerPos);
 	alListenerfv(AL_VELOCITY, listenerVel);
 	alListenerfv(AL_ORIENTATION, listenerOri);
@@ -948,16 +1119,16 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	// Generate buffers, or else no sound will happen!
 	alGenBuffers(NUM_BUFFERS, buffer);
 	buffer[0] = alutCreateBufferFromFile("../Assets/sounds/fountain.wav");
-	buffer[1] = alutCreateBufferFromFile("../Assets/sounds/fire.wav");
-	buffer[2] = alutCreateBufferFromFile("../Assets/sounds/darth_vader.wav");
+	buffer[1] = alutCreateBufferFromFile("../Assets/sounds/park.wav");
+	buffer[2] = alutCreateBufferFromFile("../Assets/sounds/gameloop.wav");
 	int errorAlut = alutGetError();
 	if (errorAlut != ALUT_ERROR_NO_ERROR) {
 		printf("- Error open files with alut %d !!\n", errorAlut);
 		exit(2);
 	}
-	*/
-	//alGetError(); /* clear error */
-	/*alGenSources(NUM_SOURCES, source);
+
+	alGetError(); /* clear error */
+	alGenSources(NUM_SOURCES, source);
 
 	if (alGetError() != AL_NO_ERROR) {
 		printf("- Error creating sources !!\n");
@@ -972,7 +1143,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	alSourcefv(source[0], AL_VELOCITY, source0Vel);
 	alSourcei(source[0], AL_BUFFER, buffer[0]);
 	alSourcei(source[0], AL_LOOPING, AL_TRUE);
-	alSourcef(source[0], AL_MAX_DISTANCE, 2000);
+	alSourcef(source[0], AL_MAX_DISTANCE, 500);
 
 	alSourcef(source[1], AL_PITCH, 1.0f);
 	alSourcef(source[1], AL_GAIN, 3.0f);
@@ -980,7 +1151,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	alSourcefv(source[1], AL_VELOCITY, source1Vel);
 	alSourcei(source[1], AL_BUFFER, buffer[1]);
 	alSourcei(source[1], AL_LOOPING, AL_TRUE);
-	alSourcef(source[1], AL_MAX_DISTANCE, 2000);
+	alSourcef(source[1], AL_MAX_DISTANCE, 500);
 
 	alSourcef(source[2], AL_PITCH, 1.0f);
 	alSourcef(source[2], AL_GAIN, 0.3f);
@@ -988,11 +1159,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	alSourcefv(source[2], AL_VELOCITY, source2Vel);
 	alSourcei(source[2], AL_BUFFER, buffer[2]);
 	alSourcei(source[2], AL_LOOPING, AL_TRUE);
-	alSourcef(source[2], AL_MAX_DISTANCE, 500);*/
-
-	// Se inicializa el modelo de texeles.
-	/*modelText = new FontTypeRendering::FontTypeRendering(screenWidth, screenHeight);
-	modelText->Initialize();*/
+	alSourcef(source[2], AL_MAX_DISTANCE, 500);
 }
 void DestroyModels() {
 	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
@@ -1025,9 +1192,16 @@ void destroy() {
 
 	// Basic objects Delete
 	skyboxSphere.destroy();
+	boxCollider.destroy();
+	sphereCollider.destroy();
+	//boxViewDepth.destroy();
+	//boxLightViewBox.destroy();
 
 	// Terrains objects Delete
 	terrain.destroy();
+
+	//borrado de modelo de texto
+	modelText->~FontTypeRendering();
 
 	// Textures Delete
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -1076,8 +1250,6 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 			break;
 		}
 	}
-
-	
 }
 
 void SetJumpVariables() {
@@ -1088,15 +1260,16 @@ void SetJumpVariables() {
 	isJumping = true;
 	modelos.at("Raccoon").animation_index = 3;
 }
+
 void GamePadLogic() {
 	int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
 	if (present == 1) {
 		int axisCount;
-		const float *axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
+		const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
 		int buttonCount;
-		const unsigned char *buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
+		const unsigned char* buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
 
-		
+
 		if (glfwGetJoystickName(GLFW_JOYSTICK_1) == "Wireless Controller" && buttonCount == 18) {
 			currentController = mapasControles.at("PS4");
 			//std::cout << "PS4 " << std::endl;
@@ -1158,12 +1331,12 @@ void GamePadLogic() {
 
 		//Right stick X
 		if (axes[currentController.joystickR_X] >= 0.1 || axes[currentController.joystickR_X] <= -0.1) {
-			camera->mouseMoveCamera(axes[currentController.joystickR_X],0, deltaTime);
+			camera->mouseMoveCamera(axes[currentController.joystickR_X] * -1.5f, 0, deltaTime);
 
 		}
 		//Right stick Y
 		if (axes[currentController.joystickR_Y] >= 0.1 || axes[currentController.joystickR_Y] <= -0.1) {
-			camera->mouseMoveCamera(0,axes[currentController.joystickR_Y], deltaTime);
+			camera->mouseMoveCamera(0, axes[currentController.joystickR_Y] * 1.5f, deltaTime);
 		}
 		//L2
 		if (axes[3] != -1) {
@@ -1174,11 +1347,12 @@ void GamePadLogic() {
 
 		}
 		if (GLFW_PRESS == buttons[currentController.but_A]) {
-			if(!isJumping)
+			if (!isJumping)
 				SetJumpVariables();
 			//std::cout << "X button pressed" << buttons[1] << std::endl;
 		}
-		else if (GLFW_RELEASE == buttons[1]) {
+		if (GLFW_PRESS == buttons[currentController.but_B]) {
+			health += 1;
 			//std::cout << "X button released" << buttons[1] << std::endl;
 		}
 		if (GLFW_PRESS == buttons[0]) {
@@ -1212,8 +1386,6 @@ void GamePadLogic() {
 		else if (GLFW_RELEASE == buttons[5]) {
 			//std::cout << "R1 button released" << buttons[5] << std::endl;
 		}
-		
-
 	}
 }
 void mouseCallback(GLFWwindow *window, double xpos, double ypos) {
@@ -1290,113 +1462,114 @@ void DrawModels() {
 
 	modelos.at("Raccoon").model.render(matrixRac);
 
-	// Render de arboles
-	for (int i = 0; i < treePosition.size(); i++) {
-		treePosition[i].y = terrain.getHeightTerrain(treePosition[i].x, treePosition[i].z);
-		modelos.at("Tree").model.setPosition(treePosition[i]);
-		modelos.at("Tree").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("Tree").model.render();
-	}
+	// Edificio
+	glm::mat4 posBuild = glm::translate(modelos.at("Building").transform, glm::vec3(125.0f, 0.0f, -75.0f));
+	modelos.at("Building").model.render(posBuild);
 
-	// Render de cerezos
-	for (int i = 0; i < cerezoPosition.size(); i++) {
-		//cerezoPosition[i].y = terrain.getHeightTerrain(cerezoPosition[i].x, cerezoPosition[i].z);
-		modelos.at("Cerezo").model.setPosition(cerezoPosition[i]);
-		modelos.at("Cerezo").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("Cerezo").model.render();
-	}
+	// Fuente
+	glm::mat4 posFount = glm::translate(modelos.at("Fountain").transform, glm::vec3(-45.0f, 0.0f, -53.0f));
+	modelos.at("Fountain").model.render(posFount);
+
+	// Resbaladilla
+	glm::mat4 posSlide = glm::translate(modelos.at("Slide").transform, glm::vec3(36.0f, 0.0f, -102.0f));
+	modelos.at("Slide").model.render(posSlide);
+
+	// Columpio
+	glm::mat4 posSwing = glm::translate(modelos.at("Swing").transform, glm::vec3(2.0f, 0.0f, -136.0f));
+	modelos.at("Swing").model.render(posSwing);
+
 	//// Para cambiar las alturas de las frutas solo es cambiando el valor que se suma cuando se calcula y
 	// Render de Cherrys
 	for (int i = 0; i < cherryPosition.size(); i++) {
 		cherryPosition[i].y = terrain.getHeightTerrain(cherryPosition[i].x, cherryPosition[i].z) + 3;
-		modelos.at("Cherry").model.setPosition(cherryPosition[i]);
-		modelos.at("Cherry").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("Cherry").model.render();
+		modelosCollider.at("Cherry").model.setPosition(cherryPosition[i]);
+		modelosCollider.at("Cherry").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelosCollider.at("Cherry").model.render();
 	}
 
 	// Render de peras
 	for (int i = 0; i < peraPosition.size(); i++) {
 		peraPosition[i].y = terrain.getHeightTerrain(peraPosition[i].x, peraPosition[i].z) + 3;
-		modelos.at("Pear").model.setPosition(peraPosition[i]);
-		modelos.at("Pear").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("Pear").model.render();
+		modelosCollider.at("Pear").model.setPosition(peraPosition[i]);
+		modelosCollider.at("Pear").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelosCollider.at("Pear").model.render();
 	}
 
 	// Render de piï¿½as
 	for (int i = 0; i < pinAppPosition.size(); i++) {
 		pinAppPosition[i].y = terrain.getHeightTerrain(pinAppPosition[i].x, pinAppPosition[i].z) + 3;
-		modelos.at("Pineapple").model.setPosition(pinAppPosition[i]);
-		modelos.at("Pineapple").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("Pineapple").model.render();
+		modelosCollider.at("Pineapple").model.setPosition(pinAppPosition[i]);
+		modelosCollider.at("Pineapple").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelosCollider.at("Pineapple").model.render();
 	}
 
 	// Render de Sandias
 	for (int i = 0; i < sandiaPosition.size(); i++) {
 		sandiaPosition[i].y = terrain.getHeightTerrain(sandiaPosition[i].x, sandiaPosition[i].z) + 3;
-		modelos.at("Watermelon").model.setPosition(sandiaPosition[i]);
-		modelos.at("Watermelon").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("Watermelon").model.render();
+		modelosCollider.at("Watermelon").model.setPosition(sandiaPosition[i]);
+		modelosCollider.at("Watermelon").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelosCollider.at("Watermelon").model.render();
 	}
 
-	// Render de bancas 
-	for (int i = 0; i < bancaPosition.size(); i++) {
-		bancaPosition[i].y = terrain.getHeightTerrain(bancaPosition[i].x, bancaPosition[i].z);
-		modelos.at("banca").model.setPosition(bancaPosition[i]);
-		modelos.at("banca").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("banca").model.render();
+	// Arbustos 1
+	for (int i = 0; i < bush1Positions.size(); i++) {
+		bush1Positions[i].y = terrain.getHeightTerrain(bush1Positions[i].x, bush1Positions[i].z);
+		modelosCollider.at("Bush1").model.setPosition(bush1Positions[i]);
+		modelosCollider.at("Bush1").model.setOrientation(glm::vec3(0, bush1Orientations[i], 0));
+		modelosCollider.at("Bush1").model.render();
 	}
 
-	// Render de mesas 
-	for (int i = 0; i < mesaPosition.size(); i++) {
-		mesaPosition[i].y = terrain.getHeightTerrain(mesaPosition[i].x, mesaPosition[i].z);
-		modelos.at("mesa").model.setPosition(mesaPosition[i]);
-		modelos.at("mesa").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("mesa").model.render();
+	// Arbustos 2
+	for (int i = 0; i < bush2Positions.size(); i++) {
+		bush2Positions[i].y = terrain.getHeightTerrain(bush2Positions[i].x, bush2Positions[i].z);
+		modelosCollider.at("Bush2").model.setPosition(bush2Positions[i]);
+		modelosCollider.at("Bush2").model.setOrientation(glm::vec3(0, bush2Orientations[i], 0));
+		modelosCollider.at("Bush2").model.render();
 	}
 
-	// Render de tronco 
-	for (int i = 0; i < troncoPosition.size(); i++) {
-		troncoPosition[i].y = terrain.getHeightTerrain(troncoPosition[i].x, troncoPosition[i].z);
-		modelos.at("tronco").model.setPosition(troncoPosition[i]);
-		modelos.at("tronco").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("tronco").model.render();
+	// Contorno Arbustos
+	for (int i = 0; i < bushBorderPositions.size(); i++) {
+		modelosCollider.at("BushBorder").model.setPosition(bushBorderPositions[i]);
+		modelosCollider.at("BushBorder").model.setOrientation(glm::vec3(0, bushBorderOrientations[i], 0));
+		modelosCollider.at("BushBorder").model.render();
 	}
 
-	// Render de bancos 
-	for (int i = 0; i < bancoPosition.size(); i++) {
-		bancoPosition[i].y = terrain.getHeightTerrain(bancoPosition[i].x, bancoPosition[i].z);
-		modelos.at("banco").model.setPosition(bancoPosition[i]);
-		modelos.at("banco").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("banco").model.render();
+	// Paredes arbustos 1
+	for (int i = 0; i < bush1WallPositions.size(); i++) {
+		modelosCollider.at("Bush1Wall").model.setPosition(bush1WallPositions[i]);
+		modelosCollider.at("Bush1Wall").model.setOrientation(glm::vec3(0, bush1WallOrientations[i], 0));
+		modelosCollider.at("Bush1Wall").model.render();
 	}
 
-	// Render de rocas
-	for (int i = 0; i < rock1Position.size(); i++) {
-		rock1Position[i].y = terrain.getHeightTerrain(rock1Position[i].x, rock1Position[i].z);
-		modelos.at("rock1").model.setPosition(rock1Position[i]);
-		modelos.at("rock1").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("rock1").model.render();
+	// Paredes arbustos 2
+	for (int i = 0; i < bush2WallPositions.size(); i++) {
+		bush2WallPositions[i].y = terrain.getHeightTerrain(bush2WallPositions[i].x, bush2WallPositions[i].z);
+		modelosCollider.at("Bush2Wall").model.setPosition(bush2WallPositions[i]);
+		modelosCollider.at("Bush2Wall").model.setOrientation(glm::vec3(0, bush2WallOrientations[i], 0));
+		modelosCollider.at("Bush2Wall").model.render();
 	}
 
-	for (int i = 0; i < rock4Position.size(); i++) {
-		rock4Position[i].y = terrain.getHeightTerrain(rock4Position[i].x, rock4Position[i].z);
-		modelos.at("rock4").model.setPosition(rock4Position[i]);
-		modelos.at("rock4").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("rock4").model.render();
+	// Arbustos 2
+	for (int i = 0; i < benchPositions.size(); i++) {
+		benchPositions[i].y = terrain.getHeightTerrain(benchPositions[i].x, benchPositions[i].z);
+		modelosCollider.at("Bench").model.setPosition(benchPositions[i]);
+		modelosCollider.at("Bench").model.setOrientation(glm::vec3(0, benchOrientations[i], 0));
+		modelosCollider.at("Bench").model.render();
 	}
 
-	for (int i = 0; i < rock7Position.size(); i++) {
-		rock7Position[i].y = terrain.getHeightTerrain(rock7Position[i].x, rock7Position[i].z);
-		modelos.at("rock7").model.setPosition(rock7Position[i]);
-		modelos.at("rock7").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("rock7").model.render();
+	// Arboles 2
+	for (int i = 0; i < treePositions.size(); i++) {
+		treePositions[i].y = terrain.getHeightTerrain(treePositions[i].x, treePositions[i].z);
+		modelosCollider.at("Tree").model.setPosition(treePositions[i]);
+		modelosCollider.at("Tree").model.render();
 	}
 
-	for (int i = 0; i < rock10Position.size(); i++) {
-		rock10Position[i].y = terrain.getHeightTerrain(rock10Position[i].x, rock10Position[i].z);
-		modelos.at("rock10").model.setPosition(rock10Position[i]);
-		modelos.at("rock10").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("rock10").model.render();
+	// Render de Cherrys
+	for (int i = 0; i < humanPositions.size(); i++) {
+		humanPositions[i].y = terrain.getHeightTerrain(humanPositions[i].x, humanPositions[i].z);
+		modelosCollider.at("Human").model.setPosition(humanPositions[i]);
+		modelosCollider.at("Human").model.setScale(glm::vec3(0.05, 0.05, 0.05));
+		modelosCollider.at("Human").model.render();
 	}
 }
 void SetUpColisionMeshes() {
@@ -1405,7 +1578,8 @@ void SetUpColisionMeshes() {
 	AbstractModel::OBB obbCollider;
 	AbstractModel::SBB sbbCollider;
 	// Agregar los arreglos de los modelos que necesitan colliders
-	std::vector<std::vector<glm::vec3>> colisiones = { cherryPosition, peraPosition, pinAppPosition, sandiaPosition };
+	std::vector<std::vector<glm::vec3>> colisiones = { cherryPosition, peraPosition, pinAppPosition, sandiaPosition, bush1Positions, bush2Positions, bushBorderPositions, bush1WallPositions, bush2WallPositions,
+		benchPositions,	treePositions };
 	int jt; // iterador del vector con las posiisones de los modelos (colisiones)
 	for (it = modelos.begin(); it != modelos.end(); it++) {
 		if (it->second.active) {
@@ -1489,13 +1663,13 @@ void Particulas() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
 	for (std::map<float, std::pair<std::string, glm::vec3> >::reverse_iterator it = blendingSorted.rbegin(); it != blendingSorted.rend(); it++) {
-		if (it->second.first.compare("fountain") == 0) { //MODIFICAR LA POSICIÓN DE LA FUENTE EN EL MAP blendingSorted
+		if (it->second.first.compare("fountain") == 0) { //MODIFICAR LA POSICIï¿½N DE LA FUENTE EN EL MAP blendingSorted
 			// Render del sistema de particulas
 			glm::mat4 modelMatrixParticlesFountain = glm::mat4(1.0);
 			modelMatrixParticlesFountain = glm::translate(modelMatrixParticlesFountain, it->second.second);
 			modelMatrixParticlesFountain[3][1] = terrain.getHeightTerrain(modelMatrixParticlesFountain[3][0], modelMatrixParticlesFountain[3][2]) + 3.5; // DISTACIA A PARTIR DEL MODELO
 			modelMatrixParticlesFountain = glm::scale(modelMatrixParticlesFountain, glm::vec3(3.2f, 3.2f, 3.2f));
-			currTimeParticlesAnimation = TimeManager::Instance().GetTime();//DURACIÓN
+			currTimeParticlesAnimation = TimeManager::Instance().GetTime();//DURACIï¿½N
 			if (currTimeParticlesAnimation - lastTimeParticlesAnimation > 20.0) {
 				lastTimeParticlesAnimation = currTimeParticlesAnimation;
 			}
@@ -1568,28 +1742,130 @@ void Particulas() {
 }
 
 void RenderColliders() {
-	for (std::map<std::string, std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >::iterator it =
+	
+	for (std::map<std::string,
+		std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >::iterator it =
 		collidersOBB.begin(); it != collidersOBB.end(); it++) {
-		//std::cout << "Rendering collider OBB for " << it->first << std::endl;
-		glm::mat4 matrixCollider = glm::mat4(1.0);
-		matrixCollider = glm::translate(matrixCollider, std::get<0>(it->second).c);
-		matrixCollider = matrixCollider * glm::mat4(std::get<0>(it->second).u);
-		matrixCollider = glm::scale(matrixCollider, std::get<0>(it->second).e * 2.0f);
-		boxCollider.setColor(glm::vec4(1.0, 0.0, 0.0, 1.0));
-		boxCollider.enableWireMode();
-		boxCollider.render(matrixCollider);
+		bool isCollision = false;
+		for (std::map<std::string,
+			std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >::iterator jt =
+			collidersOBB.begin(); jt != collidersOBB.end(); jt++) {
+			if (it != jt
+				&& testOBBOBB(std::get<0>(it->second),
+					std::get<0>(jt->second))) {
+				isCollision = true;
+			}
+		}
+		addOrUpdateCollisionDetection(collisionDetection, it->first, isCollision);
 	}
-	for (std::map<std::string, std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >::iterator it =
+
+	for (std::map<std::string,
+		std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >::iterator it =
 		collidersSBB.begin(); it != collidersSBB.end(); it++) {
-		//std::cout << "Rendering collider SBB for " << it->first << std::endl;
-		glm::mat4 matrixCollider = glm::mat4(1.0);
-		matrixCollider = glm::translate(matrixCollider, std::get<0>(it->second).c);
-		matrixCollider = glm::scale(matrixCollider, glm::vec3(std::get<0>(it->second).ratio * 2.0f));
-		sphereCollider.setColor(glm::vec4(0.0, 1.0, 0.0, 1.0));
-		sphereCollider.enableWireMode();
-		sphereCollider.render(matrixCollider);
+		bool isCollision = false;
+		for (std::map<std::string,
+			std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >::iterator jt =
+			collidersSBB.begin(); jt != collidersSBB.end(); jt++) {
+			if (it != jt
+				&& testSphereSphereIntersection(std::get<0>(it->second),
+					std::get<0>(jt->second))) {
+				isCollision = true;
+			}
+		}
+		addOrUpdateCollisionDetection(collisionDetection, it->first, isCollision);
+	}
+
+	for (std::map<std::string,
+		std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >::iterator it =
+		collidersSBB.begin(); it != collidersSBB.end(); it++) {
+		bool isCollision = false;
+		std::map<std::string,
+			std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >::iterator jt =
+			collidersOBB.begin();
+		for (; jt != collidersOBB.end(); jt++) {
+			if (testSphereOBox(std::get<0>(it->second),
+				std::get<0>(jt->second))) {
+				isCollision = true;
+				addOrUpdateCollisionDetection(collisionDetection, jt->first, isCollision);
+			}
+		}
+		addOrUpdateCollisionDetection(collisionDetection, it->first, isCollision);
+	}
+
+	std::map<std::string, bool>::iterator colIt;
+	for (colIt = collisionDetection.begin(); colIt != collisionDetection.end();
+		colIt++) {
+		std::map<std::string,
+			std::tuple<AbstractModel::SBB, glm::mat4, glm::mat4> >::iterator it =
+			collidersSBB.find(colIt->first);
+		std::map<std::string,
+			std::tuple<AbstractModel::OBB, glm::mat4, glm::mat4> >::iterator jt =
+			collidersOBB.find(colIt->first);
+		if (it != collidersSBB.end()) {
+			if (!colIt->second)
+				addOrUpdateColliders(collidersSBB, it->first);
+		}
+		if (jt != collidersOBB.end()) {
+			if (!colIt->second)
+				addOrUpdateColliders(collidersOBB, jt->first);
+			else {
+				if (jt->first.compare("Raccoon") == 0)
+					modelos.at("Raccoon").transform = std::get<1>(jt->second);
+			}
+		}
 	}
 }
+
+void DrawTexto() {
+	//Creacion de objeto texto
+	modelText = new FontTypeRendering::FontTypeRendering(screenWidth, screenHeight);
+	modelText->Initialize();
+	//modelText->render(TEXTO, x, y, size, R, G, B  , Alpha);
+	std::string saludText;
+	saludText = "Salud: " + std::to_string(100 - (health - 100));
+	modelText->render(saludText, -0.9, 0.9, 40, 0.0, 0.0, 0.0, 1.0);
+}
+
+void Sonidos() {
+	/****************************+
+	* Open AL sound data
+	*/
+	source0Pos[0] = modelMatrixFountain[3].x;
+	source0Pos[1] = modelMatrixFountain[3].y;
+	source0Pos[2] = modelMatrixFountain[3].z;
+	alSourcefv(source[0], AL_POSITION, source0Pos);
+
+	glm::vec3 upModel = glm::normalize(modelMatrixFountain[1]);
+	glm::vec3 frontModel = glm::normalize(modelMatrixFountain[2]);
+
+	listenerOri[0] = frontModel.x;
+	listenerOri[1] = frontModel.y;
+	listenerOri[2] = frontModel.z;
+	listenerOri[3] = upModel.x;
+	listenerOri[4] = upModel.y;
+	listenerOri[5] = upModel.z;
+
+	// Listener for the First person camera
+	listenerPos[0] = camera->getPosition().x;
+	listenerPos[1] = camera->getPosition().y;
+	listenerPos[2] = camera->getPosition().z;
+	alListenerfv(AL_POSITION, listenerPos);
+	listenerOri[0] = camera->getFront().x;
+	listenerOri[1] = camera->getFront().y;
+	listenerOri[2] = camera->getFront().z;
+	listenerOri[3] = camera->getUp().x;
+	listenerOri[4] = camera->getUp().y;
+	listenerOri[5] = camera->getUp().z;
+	alListenerfv(AL_ORIENTATION, listenerOri);
+
+	for (unsigned int i = 0; i < sourcesPlay.size(); i++) {
+		if (sourcesPlay[i]) {
+			sourcesPlay[i] = false;
+			alSourcePlay(source[i]);
+		}
+	}
+}
+
 void applicationLoop() {
 	
 	bool psi = true;
@@ -1608,9 +1884,8 @@ void applicationLoop() {
 	currTimeParticlesAnimationFire = lastTime;
 	lastTimeParticlesAnimationFire = lastTime;
 
-	modelMatrixFountain = glm::translate(modelMatrixFountain, glm::vec3(0.0, 0.0, 20.0));
+	modelMatrixFountain = glm::translate(modelMatrixFountain, glm::vec3(-45.0f, 0.0f, -53.0f));
 	modelMatrixFountain[3][1] = terrain.getHeightTerrain(modelMatrixFountain[3][0], modelMatrixFountain[3][2]) + 0.2;
-	modelMatrixFountain = glm::scale(modelMatrixFountain, glm::vec3(10.0f, 10.0f, 10.0f));
 
 	lastTime = TimeManager::Instance().GetTime();
 	while (psi) {
@@ -1665,9 +1940,9 @@ void applicationLoop() {
 		/*******************************************
 		 * Propiedades de neblina
 		 *******************************************/
-		shaderMulLighting.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
-		shaderTerrain.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
-		shaderSkybox.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderMulLighting.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.7, 0.6)));
+		shaderTerrain.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.7, 0.6)));
+		shaderSkybox.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.7, 0.6)));
 
 		/*******************************************
 		 * Propiedades Luz direccional
@@ -1747,16 +2022,18 @@ void applicationLoop() {
 		glCullFace(oldCullFaceMode);
 		glDepthFunc(oldDepthFuncMode);
 
-
+		
+		DrawTexto();
 		DrawModels();
 		Particulas();
 		SetUpColisionMeshes();
 		//RenderColliders();
+		Sonidos();
 		glfwSwapBuffers(window);
 	}
 }
 int main(int argc, char **argv) {
-	init(800, 700, "Window GLFW", false);
+	init(1080, 720, "Raccoon City", false);
 	applicationLoop();
 	destroy();
 	return 1;
