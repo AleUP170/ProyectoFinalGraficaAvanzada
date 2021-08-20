@@ -350,6 +350,7 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void init(int width, int height, std::string strTitle, bool bFullScreen);
 void destroy();
 bool processInput(bool continueApplication = true);
+void DrawTexto();
 
 void initParticleBuffers() {
 	
@@ -1551,6 +1552,15 @@ void RenderColliders() {
 		sphereCollider.render(matrixCollider);
 	}
 }
+
+void DrawTexto() {
+	//Creacion de objeto texto
+	modelText = new FontTypeRendering::FontTypeRendering(screenWidth, screenHeight);
+	modelText->Initialize();
+	//modelText->render(TEXTO, x, y, size, R, G, B  , Alpha);
+	modelText->render("HOLA", -0.1, -0.1, 40, 0.0, 0.0, 0.0, 1.0);
+}
+
 void applicationLoop() {
 	
 	bool psi = true;
@@ -1708,13 +1718,8 @@ void applicationLoop() {
 		glCullFace(oldCullFaceMode);
 		glDepthFunc(oldDepthFuncMode);
 
-		// Se inicializa el modelo de texeles.
-		//Creacion de objeto texto
-		modelText = new FontTypeRendering::FontTypeRendering(screenWidth, screenHeight);
-		modelText->Initialize();
-		//modelText->render(TEXTO, x, y, size, R, G, B  , Alpha);
-		modelText->render("HOLA", -0.1, -0.1, 40, 0.0, 0.0, 0.0, 1.0);
-
+		
+		DrawTexto();
 		DrawModels();
 		Particulas();
 		SetUpColisionMeshes();
