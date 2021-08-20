@@ -929,7 +929,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	/*******************************************
 	 * OpenAL init
 	 *******************************************/
-	/*alutInit(0, nullptr);
+	alutInit(0, nullptr);
 	alListenerfv(AL_POSITION, listenerPos);
 	alListenerfv(AL_VELOCITY, listenerVel);
 	alListenerfv(AL_ORIENTATION, listenerOri);
@@ -940,23 +940,23 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	}
 	else {
 		printf("init() - No errors yet.");
-	}*/
+	}
 	// Config source 0
 	// Generate buffers, or else no sound will happen!
-	/*alGenBuffers(NUM_BUFFERS, buffer);
-	buffer[0] = alutCreateBufferFromFile("../sounds/fountain.wav");
-	buffer[1] = alutCreateBufferFromFile("../sounds/fire.wav");
-	buffer[2] = alutCreateBufferFromFile("../sounds/darth_vader.wav");
+	alGenBuffers(NUM_BUFFERS, buffer);
+	buffer[0] = alutCreateBufferFromFile("../Assets/sounds/fountain.wav");
+	buffer[1] = alutCreateBufferFromFile("../Assets/sounds/fire.wav");
+	buffer[2] = alutCreateBufferFromFile("../Assets/sounds/darth_vader.wav");
 	int errorAlut = alutGetError();
 	if (errorAlut != ALUT_ERROR_NO_ERROR) {
 		printf("- Error open files with alut %d !!\n", errorAlut);
 		exit(2);
-	}*/
+	}
 
-	//alGetError(); /* clear error */
-	//alGenSources(NUM_SOURCES, source);
+	alGetError(); /* clear error */
+	alGenSources(NUM_SOURCES, source);
 
-	/*if (alGetError() != AL_NO_ERROR) {
+	if (alGetError() != AL_NO_ERROR) {
 		printf("- Error creating sources !!\n");
 		exit(2);
 	}
@@ -985,9 +985,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	alSourcefv(source[2], AL_VELOCITY, source2Vel);
 	alSourcei(source[2], AL_BUFFER, buffer[2]);
 	alSourcei(source[2], AL_LOOPING, AL_TRUE);
-	alSourcef(source[2], AL_MAX_DISTANCE, 500);*/
-
-	
+	alSourcef(source[2], AL_MAX_DISTANCE, 500);
 }
 void DestroyModels() {
 	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
@@ -1020,6 +1018,10 @@ void destroy() {
 
 	// Basic objects Delete
 	skyboxSphere.destroy();
+	boxCollider.destroy();
+	sphereCollider.destroy();
+	//boxViewDepth.destroy();
+	//boxLightViewBox.destroy();
 
 	// Terrains objects Delete
 	terrain.destroy();
@@ -1561,6 +1563,46 @@ void DrawTexto() {
 	modelText->render("HOLA", -0.1, -0.1, 40, 0.0, 0.0, 0.0, 1.0);
 }
 
+void Sonidos() {
+	/****************************+
+	* Open AL sound data
+	*/
+	source0Pos[0] = modelMatrixFountain[3].x;
+	source0Pos[1] = modelMatrixFountain[3].y;
+	source0Pos[2] = modelMatrixFountain[3].z;
+	alSourcefv(source[0], AL_POSITION, source0Pos);
+
+	glm::vec3 upModel = glm::normalize(modelMatrixFountain[1]);
+	glm::vec3 frontModel = glm::normalize(modelMatrixFountain[2]);
+
+	listenerOri[0] = frontModel.x;
+	listenerOri[1] = frontModel.y;
+	listenerOri[2] = frontModel.z;
+	listenerOri[3] = upModel.x;
+	listenerOri[4] = upModel.y;
+	listenerOri[5] = upModel.z;
+
+	// Listener for the First person camera
+	/*listenerPos[0] = camera->getPosition().x;
+	 listenerPos[1] = camera->getPosition().y;
+	 listenerPos[2] = camera->getPosition().z;
+	 alListenerfv(AL_POSITION, listenerPos);
+	 listenerOri[0] = camera->getFront().x;
+	 listenerOri[1] = camera->getFront().y;
+	 listenerOri[2] = camera->getFront().z;
+	 listenerOri[3] = camera->getUp().x;
+	 listenerOri[4] = camera->getUp().y;
+	 listenerOri[5] = camera->getUp().z;*/
+	alListenerfv(AL_ORIENTATION, listenerOri);
+
+	for (unsigned int i = 0; i < sourcesPlay.size(); i++) {
+		if (sourcesPlay[i]) {
+			sourcesPlay[i] = false;
+			alSourcePlay(source[i]);
+		}
+	}
+}
+
 void applicationLoop() {
 	
 	bool psi = true;
@@ -1724,6 +1766,7 @@ void applicationLoop() {
 		Particulas();
 		SetUpColisionMeshes();
 		RenderColliders();
+		Sonidos();
 		glfwSwapBuffers(window);
 	}
 }
