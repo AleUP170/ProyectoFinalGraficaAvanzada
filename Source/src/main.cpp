@@ -158,7 +158,7 @@ std::map<std::string, Controller> mapasControles{
 //	Modelos sin colliders
 std::map<std::string, GameObject> modelos {
 
-	{"Raccoon",GameObject("../Assets/Models/Racoon/Racoon.fbx", glm::vec3(.0005f,.0005f,.0005f),SBBCol)},
+	{"Raccoon",GameObject("../Assets/Models/Racoon/Raccoon.fbx", glm::vec3(.0005f,.0005f,.0005f),SBBCol)},
 	{"Tree",GameObject("../Assets/Models/trees/tree.obj")},
 	{"Cerezo",GameObject("../Assets/Models/trees/cherry.obj")},
 	{"Cherry",GameObject("../Assets/Models/frutas/Cherry.fbx")},
@@ -171,8 +171,8 @@ std::map<std::string, GameObject> modelos {
 	{"rock1",GameObject("../Assets/Models/rocks/rock1.obj")},
 	{"rock4",GameObject("../Assets/Models/rocks/rock4.obj")},
 	{"rock7",GameObject("../Assets/Models/rocks/rock7.obj")},
-	{"rock10",GameObject("../Assets/Models/rocks/rock10.obj")}
-
+	{"rock10",GameObject("../Assets/Models/rocks/rock10.obj")},
+	{"banca",GameObject("../Assets/Models/banca/banca.obj")}
 };
 
 //	Modelos que necesitaran colliders 
@@ -640,7 +640,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		skyboxTexture.freeImage(bitmap);
 	}
 	// Definiendo la textura a utilizar
-	Texture textureTerrainBackground("../Assets/Textures/grassy2.png");
+	Texture textureTerrainBackground("../Assets/Textures/Grass.png");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	bitmap = textureTerrainBackground.loadImage();
 	// Convertimos el mapa de bits en un arreglo unidimensional de tipo unsigned char
@@ -673,7 +673,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	textureTerrainBackground.freeImage(bitmap);
 
 	// Definiendo la textura a utilizar
-	Texture textureTerrainR("../Assets/Textures/mud.png");
+	Texture textureTerrainR("../Assets/Textures/path.png");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	bitmap = textureTerrainR.loadImage();
 	// Convertimos el mapa de bits en un arreglo unidimensional de tipo unsigned char
@@ -706,7 +706,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	textureTerrainR.freeImage(bitmap);
 
 	// Definiendo la textura a utilizar
-	Texture textureTerrainG("../Assets/Textures/grassFlowers.png");
+	Texture textureTerrainG("../Assets/Textures/AutumnGrass.png");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	bitmap = textureTerrainG.loadImage();
 	// Convertimos el mapa de bits en un arreglo unidimensional de tipo unsigned char
@@ -739,7 +739,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	textureTerrainG.freeImage(bitmap);
 
 	// Definiendo la textura a utilizar
-	Texture textureTerrainB("../Assets/Textures/path.png");
+	Texture textureTerrainB("../Assets/Textures/Cork.png");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	bitmap = textureTerrainB.loadImage();
 	// Convertimos el mapa de bits en un arreglo unidimensional de tipo unsigned char
@@ -916,10 +916,10 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	glBindTexture(GL_TEXTURE_2D, depthMap);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);*/
-	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);*/
-	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 	float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
@@ -943,23 +943,23 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	}
 	else {
 		printf("init() - No errors yet.");
-	}*/
+	}
 	// Config source 0
 	// Generate buffers, or else no sound will happen!
-	/*alGenBuffers(NUM_BUFFERS, buffer);
-	buffer[0] = alutCreateBufferFromFile("../sounds/fountain.wav");
-	buffer[1] = alutCreateBufferFromFile("../sounds/fire.wav");
-	buffer[2] = alutCreateBufferFromFile("../sounds/darth_vader.wav");
+	alGenBuffers(NUM_BUFFERS, buffer);
+	buffer[0] = alutCreateBufferFromFile("../Assets/sounds/fountain.wav");
+	buffer[1] = alutCreateBufferFromFile("../Assets/sounds/fire.wav");
+	buffer[2] = alutCreateBufferFromFile("../Assets/sounds/darth_vader.wav");
 	int errorAlut = alutGetError();
 	if (errorAlut != ALUT_ERROR_NO_ERROR) {
 		printf("- Error open files with alut %d !!\n", errorAlut);
 		exit(2);
-	}*/
-
+	}
+	*/
 	//alGetError(); /* clear error */
-	//alGenSources(NUM_SOURCES, source);
+	/*alGenSources(NUM_SOURCES, source);
 
-	/*if (alGetError() != AL_NO_ERROR) {
+	if (alGetError() != AL_NO_ERROR) {
 		printf("- Error creating sources !!\n");
 		exit(2);
 	}
@@ -991,8 +991,8 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	alSourcef(source[2], AL_MAX_DISTANCE, 500);*/
 
 	// Se inicializa el modelo de texeles.
-	//modelText = new FontTypeRendering::FontTypeRendering(screenWidth, screenHeight);
-	//modelText->Initialize();
+	/*modelText = new FontTypeRendering::FontTypeRendering(screenWidth, screenHeight);
+	modelText->Initialize();*/
 }
 void DestroyModels() {
 	for (std::map<std::string, GameObject>::iterator it = modelos.begin(); it != modelos.end(); ++it)
@@ -1290,7 +1290,7 @@ void DrawModels() {
 
 	modelos.at("Raccoon").model.render(matrixRac);
 
-	/*// Render de arboles
+	// Render de arboles
 	for (int i = 0; i < treePosition.size(); i++) {
 		treePosition[i].y = terrain.getHeightTerrain(treePosition[i].x, treePosition[i].z);
 		modelos.at("Tree").model.setPosition(treePosition[i]);
@@ -1304,10 +1304,10 @@ void DrawModels() {
 		modelos.at("Cerezo").model.setPosition(cerezoPosition[i]);
 		modelos.at("Cerezo").model.setScale(glm::vec3(1.0, 1.0, 1.0));
 		modelos.at("Cerezo").model.render();
-	}*/
+	}
 	//// Para cambiar las alturas de las frutas solo es cambiando el valor que se suma cuando se calcula y
 	// Render de Cherrys
-	/*for (int i = 0; i < cherryPosition.size(); i++) {
+	for (int i = 0; i < cherryPosition.size(); i++) {
 		cherryPosition[i].y = terrain.getHeightTerrain(cherryPosition[i].x, cherryPosition[i].z) + 3;
 		modelos.at("Cherry").model.setPosition(cherryPosition[i]);
 		modelos.at("Cherry").model.setScale(glm::vec3(1.0, 1.0, 1.0));
@@ -1336,10 +1336,10 @@ void DrawModels() {
 		modelos.at("Watermelon").model.setPosition(sandiaPosition[i]);
 		modelos.at("Watermelon").model.setScale(glm::vec3(1.0, 1.0, 1.0));
 		modelos.at("Watermelon").model.render();
-	}*/
+	}
 
 	// Render de bancas 
-	/*for (int i = 0; i < bancaPosition.size(); i++) {
+	for (int i = 0; i < bancaPosition.size(); i++) {
 		bancaPosition[i].y = terrain.getHeightTerrain(bancaPosition[i].x, bancaPosition[i].z);
 		modelos.at("banca").model.setPosition(bancaPosition[i]);
 		modelos.at("banca").model.setScale(glm::vec3(1.0, 1.0, 1.0));
@@ -1368,10 +1368,10 @@ void DrawModels() {
 		modelos.at("banco").model.setPosition(bancoPosition[i]);
 		modelos.at("banco").model.setScale(glm::vec3(1.0, 1.0, 1.0));
 		modelos.at("banco").model.render();
-	}*/
+	}
 
 	// Render de rocas
-	/*for (int i = 0; i < rock1Position.size(); i++) {
+	for (int i = 0; i < rock1Position.size(); i++) {
 		rock1Position[i].y = terrain.getHeightTerrain(rock1Position[i].x, rock1Position[i].z);
 		modelos.at("rock1").model.setPosition(rock1Position[i]);
 		modelos.at("rock1").model.setScale(glm::vec3(1.0, 1.0, 1.0));
@@ -1397,7 +1397,7 @@ void DrawModels() {
 		modelos.at("rock10").model.setPosition(rock10Position[i]);
 		modelos.at("rock10").model.setScale(glm::vec3(1.0, 1.0, 1.0));
 		modelos.at("rock10").model.render();
-	}*/
+	}
 }
 void SetUpColisionMeshes() {
 	std::map<std::string, GameObject>::iterator it;
@@ -1411,7 +1411,7 @@ void SetUpColisionMeshes() {
 		if (it->second.active) {
 			switch (it->second.colision) {
 				case OBBCol:
-					std::cout << "Setting OBB collider for " << it->first << std::endl;
+					//std::cout << "Setting OBB collider for " << it->first << std::endl;
 					matrix = it->second.transform;
 					matrix = glm::scale(matrix, it->second.modelScale);
 					obbCollider.u = glm::quat_cast(it->second.transform);
@@ -1421,7 +1421,7 @@ void SetUpColisionMeshes() {
 					addOrUpdateColliders(collidersOBB, it->first, obbCollider, it->second.transform);
 					break;
 				case SBBCol:
-					std::cout << "Setting SBB collider for " << it->first << std::endl;
+					//std::cout << "Setting SBB collider for " << it->first << std::endl;
 					matrix = it->second.transform;
 					matrix = glm::scale(matrix, it->second.modelScale);
 					matrix = glm::translate(matrix, glm::vec3(it->second.model.getSbb().c));
@@ -1439,7 +1439,7 @@ void SetUpColisionMeshes() {
 			switch (it->second.colision) {
 				case OBBCol:
 					for (int i = 0; i < colisiones[jt].size(); i++) {
-						std::cout << "Setting OBB collider for " << it->first + std::to_string(i) << std::endl;
+						//std::cout << "Setting OBB collider for " << it->first + std::to_string(i) << std::endl;
 						matrix = it->second.transform;
 						matrix = glm::translate(matrix, colisiones[jt][i]);
 						obbCollider.u = glm::quat_cast(it->second.transform);
@@ -1452,7 +1452,7 @@ void SetUpColisionMeshes() {
 					break;
 				case SBBCol:
 					for (int i = 0; i < colisiones[jt].size(); i++) {
-						std::cout << "Setting SBB collider for " << it->first + std::to_string(i) << std::endl;
+						//std::cout << "Setting SBB collider for " << it->first + std::to_string(i) << std::endl;
 						matrix = it->second.transform;
 						matrix = glm::translate(matrix, colisiones[jt][i]);
 						matrix = glm::scale(matrix, it->second.modelScale);
