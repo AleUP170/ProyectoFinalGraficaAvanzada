@@ -157,20 +157,7 @@ std::map<std::string, Controller> mapasControles{
 
 //	Modelos sin colliders
 std::map<std::string, GameObject> modelos {
-	{"Raccoon",GameObject("../Assets/Models/Racoon/Racoon.fbx", glm::vec3(.0005f,.0005f,.0005f),SBBCol)},
-	{"Tree",GameObject("../Assets/Models/trees/tree.obj")},
-	{"Cerezo",GameObject("../Assets/Models/trees/cherry.obj")},
-	{"Cherry",GameObject("../Assets/Models/frutas/Cherry.fbx")},
-	{"Pear",GameObject("../Assets/Models/frutas/Pear.fbx")},
-	{"Pineapple",GameObject("../Assets/Models/frutas/Pineapple.fbx")},
-	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx")},
-	{"banco",GameObject("../Assets/Models/wooden/banco.obj")},
-	{"mesa",GameObject("../Assets/Models/wooden/mesaparque.obj")},
-	{"tronco",GameObject("../Assets/Models/wooden/tronco.obj")},
-	{"rock1",GameObject("../Assets/Models/rocks/rock1.obj")},
-	{"rock4",GameObject("../Assets/Models/rocks/rock4.obj")},
-	{"rock7",GameObject("../Assets/Models/rocks/rock7.obj")},
-	{"rock10",GameObject("../Assets/Models/rocks/rock10.obj")}
+	{"Raccoon",GameObject("../Assets/Models/Racoon/Racoon.fbx", glm::vec3(.0005f,.0005f,.0005f),SBBCol)}
 };
 
 //	Modelos que necesitaran colliders 
@@ -178,7 +165,9 @@ std::map<std::string, GameObject> modelosCollider{
 	{"Cherry",GameObject("../Assets/Models/frutas/Cherry.fbx", SBBCol)},
 	{"Pear",GameObject("../Assets/Models/frutas/Pear.fbx", SBBCol)},
 	{"Pineapple",GameObject("../Assets/Models/frutas/Pineapple.fbx", SBBCol)},
-	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx", SBBCol)}
+	{"Watermelon",GameObject("../Assets/Models/frutas/Watermelon.fbx", SBBCol)},
+	{"Bush1",GameObject("../Assets/Models/Bush/Bush.fbx", OBBCol)},
+	{"Bush2",GameObject("../Assets/Models/Bush/Bush2.fbx", OBBCol)}
 };
 
 /*	Para los colliders, es necesario agregar los arreglos de las posisiones de 
@@ -199,30 +188,21 @@ std::vector<glm::vec3> pinAppPosition = { glm::vec3(-1, 0.0, -1) };
 //	SANDIA
 std::vector<glm::vec3> sandiaPosition = { glm::vec3(0, 0.0, 0) };
 //*** Posiciones de arboles ***//
-//	Tree
-std::vector<glm::vec3> treePosition = { glm::vec3(0, 0, 0) };
-//	cerezo
-std::vector<glm::vec3> cerezoPosition = { glm::vec3(0, 0, 0) };
-//*** Posisiones de banca(o)s ***//
-//	Banca
-std::vector<glm::vec3> bancaPosition = { glm::vec3(0, 0, 5) };
-//	Mesa
-std::vector<glm::vec3> mesaPosition = { glm::vec3(0, 0, 10) };
-//	tronco
-std::vector<glm::vec3> troncoPosition = { glm::vec3(0, 0, 15) };
-//	banco
-std::vector<glm::vec3> bancoPosition = { glm::vec3(0, 0, 20) };
+// Posiciones arbustos 1
+std::vector<glm::vec3> bush1Positions = {glm::vec3(93.0f, 0.0f, -13.0f), glm::vec3(7.0f, 0.0f, 64.0f), glm::vec3(92.0f, 0.0f, 142.0f), glm::vec3(18.0f, 0.0f, -26.0f),	glm::vec3(-2.0f, 0.0f, -108.0f)};
+std::vector<float> bush1Orientations = {0, 0, 0, 0, 0};
 
-//*** Posisiones de rocas ***//
-//	Rock 1
-std::vector<glm::vec3> rock1Position = { glm::vec3(0, 0, 25) };
-//	Rock 4
-std::vector<glm::vec3> rock4Position = { glm::vec3(0, 0, 5) };
-//	Rock 7
-std::vector<glm::vec3> rock7Position = { glm::vec3(0, 0, 10) };
-//	Rock 10
-std::vector<glm::vec3> rock10Position = { glm::vec3(0, 0, 15) };
-
+// Posiciones arbustos 2
+std::vector<glm::vec3> bush2Positions = {
+		glm::vec3(144.0f, 0, -29.0f),
+		glm::vec3(140.0f, 0, 82.0f),
+		glm::vec3(125.0f, 0, 183.0f),
+		glm::vec3(17.0f, 0, 177.0f),
+		glm::vec3(-6.0f, 0, 126.0f)
+};
+std::vector<float> bush2Orientations = {
+		0, 0, 0, 0, 0
+};
 
 //variables player
 float speed = 1.0f;
@@ -237,7 +217,7 @@ std::shared_ptr<Camera> camera(new ThirdPersonCamera());
 Sphere skyboxSphere(20, 20);
 
 // Terrain model instance
-Terrain terrain(-1, -1, 200, 8, "../Assets/Textures/heightmap.png");
+Terrain terrain(-1, -1, 400, 8, "../Assets/Textures/heightmap.png");
 
 GLuint textureTerrainBackgroundID, textureTerrainRID, textureTerrainGID, textureTerrainBID, textureTerrainBlendMapID;
 GLuint textureParticleFountainID, textureParticleFireID, texId;
@@ -1272,15 +1252,15 @@ void DrawModels() {
 	}*/
 	//// Para cambiar las alturas de las frutas solo es cambiando el valor que se suma cuando se calcula y
 	// Render de Cherrys
-	/*for (int i = 0; i < cherryPosition.size(); i++) {
+	for (int i = 0; i < cherryPosition.size(); i++) {
 		cherryPosition[i].y = terrain.getHeightTerrain(cherryPosition[i].x, cherryPosition[i].z) + 3;
-		modelos.at("Cherry").model.setPosition(cherryPosition[i]);
-		modelos.at("Cherry").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("Cherry").model.render();
+		modelosCollider.at("Cherry").model.setPosition(cherryPosition[i]);
+		modelosCollider.at("Cherry").model.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelosCollider.at("Cherry").model.render();
 	}
 
 	// Render de peras
-	for (int i = 0; i < peraPosition.size(); i++) {
+	/*for (int i = 0; i < peraPosition.size(); i++) {
 		peraPosition[i].y = terrain.getHeightTerrain(peraPosition[i].x, peraPosition[i].z) + 3;
 		modelos.at("Pear").model.setPosition(peraPosition[i]);
 		modelos.at("Pear").model.setScale(glm::vec3(1.0, 1.0, 1.0));
@@ -1303,66 +1283,21 @@ void DrawModels() {
 		modelos.at("Watermelon").model.render();
 	}*/
 
-	// Render de bancas 
-	/*for (int i = 0; i < bancaPosition.size(); i++) {
-		bancaPosition[i].y = terrain.getHeightTerrain(bancaPosition[i].x, bancaPosition[i].z);
-		modelos.at("banca").model.setPosition(bancaPosition[i]);
-		modelos.at("banca").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("banca").model.render();
+	// Arbustos 1
+	for (int i = 0; i < bush1Positions.size(); i++) {
+		bush1Positions[i].y = terrain.getHeightTerrain(bush1Positions[i].x, bush1Positions[i].z);
+		modelosCollider.at("Bush1").model.setPosition(bush1Positions[i]);
+		modelosCollider.at("Bush1").model.setOrientation(glm::vec3(0, bush1Orientations[i], 0));
+		modelosCollider.at("Bush1").model.render();
 	}
 
-	// Render de mesas 
-	for (int i = 0; i < mesaPosition.size(); i++) {
-		mesaPosition[i].y = terrain.getHeightTerrain(mesaPosition[i].x, mesaPosition[i].z);
-		modelos.at("mesa").model.setPosition(mesaPosition[i]);
-		modelos.at("mesa").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("mesa").model.render();
+	// Arbustos 2
+	for (int i = 0; i < bush2Positions.size(); i++) {
+		bush2Positions[i].y = terrain.getHeightTerrain(bush2Positions[i].x, bush2Positions[i].z);
+		modelosCollider.at("Bush2").model.setPosition(bush2Positions[i]);
+		modelosCollider.at("Bush2").model.setOrientation(glm::vec3(0, bush2Orientations[i], 0));
+		modelosCollider.at("Bush2").model.render();
 	}
-
-	// Render de tronco 
-	for (int i = 0; i < troncoPosition.size(); i++) {
-		troncoPosition[i].y = terrain.getHeightTerrain(troncoPosition[i].x, troncoPosition[i].z);
-		modelos.at("tronco").model.setPosition(troncoPosition[i]);
-		modelos.at("tronco").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("tronco").model.render();
-	}
-
-	// Render de bancos 
-	for (int i = 0; i < bancoPosition.size(); i++) {
-		bancoPosition[i].y = terrain.getHeightTerrain(bancoPosition[i].x, bancoPosition[i].z);
-		modelos.at("banco").model.setPosition(bancoPosition[i]);
-		modelos.at("banco").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("banco").model.render();
-	}*/
-
-	// Render de rocas
-	/*for (int i = 0; i < rock1Position.size(); i++) {
-		rock1Position[i].y = terrain.getHeightTerrain(rock1Position[i].x, rock1Position[i].z);
-		modelos.at("rock1").model.setPosition(rock1Position[i]);
-		modelos.at("rock1").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("rock1").model.render();
-	}
-
-	for (int i = 0; i < rock4Position.size(); i++) {
-		rock4Position[i].y = terrain.getHeightTerrain(rock4Position[i].x, rock4Position[i].z);
-		modelos.at("rock4").model.setPosition(rock4Position[i]);
-		modelos.at("rock4").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("rock4").model.render();
-	}
-
-	for (int i = 0; i < rock7Position.size(); i++) {
-		rock7Position[i].y = terrain.getHeightTerrain(rock7Position[i].x, rock7Position[i].z);
-		modelos.at("rock7").model.setPosition(rock7Position[i]);
-		modelos.at("rock7").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("rock7").model.render();
-	}
-
-	for (int i = 0; i < rock10Position.size(); i++) {
-		rock10Position[i].y = terrain.getHeightTerrain(rock10Position[i].x, rock10Position[i].z);
-		modelos.at("rock10").model.setPosition(rock10Position[i]);
-		modelos.at("rock10").model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		modelos.at("rock10").model.render();
-	}*/
 }
 void SetUpColisionMeshes() {
 	std::map<std::string, GameObject>::iterator it;
@@ -1370,7 +1305,7 @@ void SetUpColisionMeshes() {
 	AbstractModel::OBB obbCollider;
 	AbstractModel::SBB sbbCollider;
 	// Agregar los arreglos de los modelos que necesitan colliders
-	std::vector<std::vector<glm::vec3>> colisiones = { cherryPosition, peraPosition, pinAppPosition, sandiaPosition };
+	std::vector<std::vector<glm::vec3>> colisiones = { cherryPosition, peraPosition, pinAppPosition, sandiaPosition, bush1Positions, bush2Positions };
 	int jt; // iterador del vector con las posiisones de los modelos (colisiones)
 	for (it = modelos.begin(); it != modelos.end(); it++) {
 		if (it->second.active) {
