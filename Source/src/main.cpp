@@ -150,13 +150,13 @@ std::map<std::string, GameObject> modelos {
 
 //	Modelos que necesitaran colliders 
 std::map<std::string, GameObject> modelosCollider{
-	{"Bush1",GameObject("../Assets/models/Bush/Bush.fbx", OBBCol)},
-	{"Bush2",GameObject("../Assets/models/Bush/Bush2.fbx", glm::vec3(1.0f,0.5f,0.5f), OBBCol)},
-	{"BushBorder",GameObject("../Assets/models/Bush/BushBorder.fbx", OBBCol)},
-	{"Bush1Wall",GameObject("../Assets/models/Bush/Bush1Wall.fbx", OBBCol)},
-	{"Bush2Wall",GameObject("../Assets/models/Bush/Bush2Wall.fbx", OBBCol)},
-	{"Bench",GameObject("../Assets/models/StoneBench/Bench.fbx", OBBCol)},
-	{"Tree",GameObject("../Assets/models/Trees/Tree.fbx", OBBCol)},
+	{"Bush1",GameObject("../Assets/Models/Bush/Bush.fbx", OBBCol)},
+	{"Bush2",GameObject("../Assets/Models/Bush/Bush2.fbx", glm::vec3(1.0f,0.5f,0.5f), OBBCol)},
+	{"BushBorder",GameObject("../Assets/Models/Bush/BushBorder.fbx", OBBCol)},
+	{"Bush1Wall",GameObject("../Assets/Models/Bush/Bush1Wall.fbx", OBBCol)},
+	{"Bush2Wall",GameObject("../Assets/Models/Bush/Bush2Wall.fbx", OBBCol)},
+	{"Bench",GameObject("../Assets/Models/StoneBench/Bench.fbx", OBBCol)},
+	{"Tree",GameObject("../Assets/Models/Trees/Tree.fbx", OBBCol)},
 	{"Cherry",GameObject("../Assets/Models/frutas/Cherry.fbx", SBBCol)},
 	{"Pear",GameObject("../Assets/Models/frutas/Pear.fbx", SBBCol)},
 	{"Pineapple",GameObject("../Assets/Models/frutas/Pineapple.fbx", SBBCol)},
@@ -178,10 +178,10 @@ std::vector<glm::vec3> bush1Positions = {
 		glm::vec3(7.0f, 0.0f, 64.0f),
 		glm::vec3(92.0f, 0.0f, 142.0f),
 		glm::vec3(18.0f, 0.0f, -26.0f),
-		glm::vec3(-2.0f, 0.0f, -108.0f),
+		glm::vec3(-2.0f, 0.0f, -108.0f)
 };
 std::vector<float> bush1Orientations = {
-		0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0
 };
 
 // Posiciones arbustos 2
@@ -190,10 +190,10 @@ std::vector<glm::vec3> bush2Positions = {
 		glm::vec3(140.0f, 0, 82.0f),
 		glm::vec3(125.0f, 0, 183.0f),
 		glm::vec3(17.0f, 0, 177.0f),
-		glm::vec3(-6.0f, 0, 126.0f),
+		glm::vec3(-6.0f, 0, 126.0f)
 };
 std::vector<float> bush2Orientations = {
-		0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0
 };
 
 // Posiciones arbustos borde
@@ -201,86 +201,86 @@ std::vector<glm::vec3> bushBorderPositions = {
 		glm::vec3(0, 0, -200),
 		glm::vec3(0, 0, 200),
 		glm::vec3(-200, 0, 0),
-		glm::vec3(200, 0, 0),
+		glm::vec3(200, 0, 0)
 };
 std::vector<float> bushBorderOrientations = {
 		0,
 		180,
 		90,
-		270,
+		270
 };
 
 // Posiciones paredes arbustos pequeños
 std::vector<glm::vec3> bush1WallPositions = {
-		glm::vec3(-28.0f, 0, -14.0f),
-		glm::vec3(-28.0f, 0, -92.0f),
-		glm::vec3(-78.0f, 0, -14.0f),
-		glm::vec3(-78.0f, 0, -92.0f),
-		glm::vec3(-6.0f, 0, -21.0f),
-		glm::vec3(-84.0f, 0, -21.0f),
-		glm::vec3(-6.0f, 0, -71.0f),
-		glm::vec3(-84.0f, 0, -71.0f),
+		glm::vec3(-28.0f, 0.0f, -14.0f),
+		glm::vec3(-28.0f, 0.0f, -92.0f),
+		glm::vec3(-78.0f, 0.0f, -14.0f),
+		glm::vec3(-78.0f, 0.0f, -92.0f),
+		glm::vec3(-6.0f, 0.0f, -21.0f),
+		glm::vec3(-84.0f, 0.0f, -21.0f),
+		glm::vec3(-6.0f, 0.0f, -71.0f),
+		glm::vec3(-84.0f, 0.0f, -71.0f)
 };
 std::vector<float> bush1WallOrientations = {
 		0, 0, 0, 0,
-		90, 90, 90, 90,
+		90, 90, 90, 90
 };
 
 // Posiciones paredes arbustos grandes
 std::vector<glm::vec3> bush2WallPositions = {
 		// Borde central
-		glm::vec3(9.0f, 0, -5.0f),
-		glm::vec3(-102.0f, 0, -5.0f),
-		glm::vec3(9.0f, 0, -70.0f),
-		glm::vec3(-102.0f, 0, -70.0f),
-		glm::vec3(-28.0f, 0, 2.0f),
-		glm::vec3(-28.0f, 0, -110.0f),
-		glm::vec3(-95.0f, 0, 2.0f),
-		glm::vec3(-95.0f, 0, -110.0f),
+		glm::vec3(9.0f, 0.0f, -5.0f),
+		glm::vec3(-102.0f, 0.0f, -5.0f),
+		glm::vec3(9.0f, 0.0f, -70.0f),
+		glm::vec3(-102.0f, 0.0f, -70.0f),
+		glm::vec3(-28.0f, 0.0f, 2.0f),
+		glm::vec3(-28.0f, 0.0f, -110.0f),
+		glm::vec3(-95.0f, 0.0f, 2.0f),
+		glm::vec3(-95.0f, 0.0f, -110.0f),
 
-		glm::vec3(-31.0f, 0, -110.0f),
+		glm::vec3(-31.0f, 0.0f, -110.0f),
 
 		// Pasillo
-		glm::vec3(-31.0f, 0, 42.0f),
-		glm::vec3(-31.0f, 0, 69.0f),
-		glm::vec3(-31.0f, 0, 106.0f),
-		glm::vec3(-31.0f, 0, 133.0f),
-		glm::vec3(-31.0f, 0, 153.0f),
+		glm::vec3(-31.0f, 0.0f, 42.0f),
+		glm::vec3(-31.0f, 0.0f, 69.0f),
+		glm::vec3(-31.0f, 0.0f, 106.0f),
+		glm::vec3(-31.0f, 0.0f, 133.0f),
+		glm::vec3(-31.0f, 0.0f, 153.0f),
 
-		glm::vec3(-59.0f, 0, 42.0f),
-		glm::vec3(-59.0f, 0, 50.0f),
-		glm::vec3(-59.0f, 0, 106.0f),
-		glm::vec3(-59.0f, 0, 133.0f),
-		glm::vec3(-59.0f, 0, 163.0f),
+		glm::vec3(-59.0f, 0.0f, 42.0f),
+		glm::vec3(-59.0f, 0.0f, 50.0f),
+		glm::vec3(-59.0f, 0.0f, 106.0f),
+		glm::vec3(-59.0f, 0.0f, 133.0f),
+		glm::vec3(-59.0f, 0.0f, 163.0f),
 
 		// Cancha
-		glm::vec3(-66.0f, 0, 50.0f),
-		glm::vec3(-66.0f, 0, 127.0f),
-		glm::vec3(-66.0f, 0, 105.0f),
+		glm::vec3(-66.0f, 0.0f, 50.0f),
+		glm::vec3(-66.0f, 0.0f, 127.0f),
+		glm::vec3(-66.0f, 0.0f, 105.0f),
 
-		glm::vec3(-137.0f, 0, 50.0f),
-		glm::vec3(-137.0f, 0, 127.0f),
-		glm::vec3(-137.0f, 0, 105.0f),
+		glm::vec3(-137.0f, 0.0f, 50.0f),
+		glm::vec3(-137.0f, 0.0f, 127.0f),
+		glm::vec3(-137.0f, 0.0f, 105.0f),
 
-		glm::vec3(-135.0f, 0, 20.0f),
-		glm::vec3(-97.0f, 0, 20.0f),
-		glm::vec3(-135.0f, 0, 131.0f),
-		glm::vec3(-97.0f, 0, 131.0f),
+		glm::vec3(-135.0f, 0.0f, 20.0f),
+		glm::vec3(-97.0f, 0.0f, 20.0f),
+		glm::vec3(-135.0f, 0.0f, 131.0f),
+		glm::vec3(-97.0f, 0.0f, 131.0f),
 
 		// Edificio
-		glm::vec3(12.0f, 0, -65.0f),
-		glm::vec3(12.0f, 0, -40.0f),
-		glm::vec3(42.0f, 0, -40.0f),
-		glm::vec3(72.0f, 0, -40.0f),
+		glm::vec3(12.0f, 0.0f, -65.0f),
+		glm::vec3(12.0f, 0.0f, -40.0f),
+		glm::vec3(42.0f, 0.0f, -40.0f),
+		glm::vec3(72.0f, 0.0f, -40.0f),
 
-		glm::vec3(83.0f, 0, -161.0f),
-		glm::vec3(118.0f, 0, -161.0f),
+		glm::vec3(83.0f, 0.0f, -161.0f),
+		glm::vec3(118.0f, 0.0f, -161.0f),
 
-		glm::vec3(82.0f, 0, -71.0f),
-		glm::vec3(82.0f, 0, -116.0f),
+		glm::vec3(82.0f, 0.0f, -71.0f),
+		glm::vec3(82.0f, 0.0f, -116.0f),
 
-		glm::vec3(152.0f, 0, -71.0f),
-		glm::vec3(152.0f, 0, -116.0f),
+		glm::vec3(152.0f, 0.0f, -71.0f),
+		glm::vec3(152.0f, 0.0f, -116.0f)
 
 };
 std::vector<float> bush2WallOrientations = {
@@ -315,13 +315,13 @@ std::vector<glm::vec3> benchPositions = {
 
 		glm::vec3(-80.0f, 0, 113.0f),
 		glm::vec3(-100.0f, 0, 113.0f),
-		glm::vec3(-120.0f, 0, 113.0f),
+		glm::vec3(-120.0f, 0, 113.0f)
 };
 std::vector<float> benchOrientations = {
 		45, 135, 45, 135,
 		0, 90,
 		0, -35,
-		0, 0, 0,
+		0, 0, 0
 };
 
 // Posiciones arboles
@@ -357,7 +357,7 @@ std::vector<glm::vec3> treePositions = {
 		glm::vec3(137.0f, 0, 79.0f),
 		glm::vec3(44.0f, 0, 137.0f),
 		glm::vec3(139.0f, 0, 34.0f),
-		glm::vec3(178.0f, 0, 35.0f),
+		glm::vec3(178.0f, 0, 35.0f)
 };
 
 //*** Posiciones de frutas ***//
@@ -993,58 +993,56 @@ void DrawModels() {
 
 	// Contorno Arbustos
 	for (int i = 0; i < bushBorderPositions.size(); i++) {
-		glm::mat4 posBush = glm::translate(modelos.at("BushBorder").transform, bushBorderPositions[i]);
-		posBush = glm::rotate(posBush, glm::radians(bushBorderOrientations[i]), glm::vec3(0, 1, 0));
-		modelos.at("BushBorder").model.render(posBush);
+		modelosCollider.at("BushBorder").model.setPosition(bushBorderPositions[i]);
+		modelosCollider.at("BushBorder").model.setOrientation(glm::vec3(0,bushBorderOrientations[i],0));
+		modelosCollider.at("BushBorder").model.render();
 	}
 
 	// Paredes arbustos 1
-	for (int i = 0; i < bush1WallPositions.size(); i++) {
-		glm::mat4 posBush = glm::translate(modelos.at("Bush1Wall").transform, bush1WallPositions[i]);
-		posBush = glm::rotate(posBush, glm::radians(bush1WallOrientations[i]), glm::vec3(0, 1, 0));
-		modelos.at("Bush1Wall").model.render(posBush);
+	/*for (int i = 0; i < bush1WallPositions.size(); i++) {
+		modelosCollider.at("Bush1Wall").model.setPosition(bush1WallPositions[i]);
+		modelosCollider.at("Bush1Wall").model.setOrientation(glm::vec3(0, bush1WallOrientations[i], 0));
+		modelosCollider.at("Bush1Wall").model.render();
 	}
 
 	// Paredes arbustos 2
 	for (int i = 0; i < bush2WallPositions.size(); i++) {
-		glm::mat4 posBush = glm::translate(modelos.at("Bush2Wall").transform, bush2WallPositions[i]);
-		posBush = glm::rotate(posBush, glm::radians(bush2WallOrientations[i]), glm::vec3(0, 1, 0));
-		modelos.at("Bush2Wall").model.render(posBush);
+		modelosCollider.at("Bush2Wall").model.setPosition(bush2WallPositions[i]);
+		modelosCollider.at("Bush2Wall").model.setOrientation(glm::vec3(0, bush2WallOrientations[i], 0));
+		modelosCollider.at("Bush2Wall").model.render();
 	}
 
 	// Arbustos 1
 	for (int i = 0; i < bush1Positions.size(); i++) {
 		bush1Positions[i].y = terrain.getHeightTerrain(bush1Positions[i].x, bush1Positions[i].z);
-		glm::mat4 posBush = glm::translate(modelos.at("Bush1").transform, bush1Positions[i]);
-		posBush = glm::rotate(posBush, glm::radians(bush1Orientations[i]), glm::vec3(0, 1, 0));
-		modelos.at("Bush1").model.render(posBush);
+		modelosCollider.at("Bush1").model.setPosition(bush1Positions[i]);
+		modelosCollider.at("Bush1").model.setOrientation(glm::vec3(0, bush1Orientations[i], 0));
+		modelosCollider.at("Bush1").model.render();
 	}
 
 	// Arbustos 2
 	for (int i = 0; i < bush2Positions.size(); i++) {
-		bush2Positions[i].y = terrain.getHeightTerrain(bush2Positions[i].x, bush2Positions[i].z);
-		glm::mat4 posBush = glm::translate(modelos.at("Bush2").transform, bush2Positions[i]);
-		posBush = glm::scale(posBush, modelos.at("Bush2").modelScale);
-		posBush = glm::rotate(posBush, glm::radians(bush2Orientations[i]), glm::vec3(0, 1, 0));
-		modelos.at("Bush2").model.render(posBush);
+		bush1Positions[i].y = terrain.getHeightTerrain(bush2Positions[i].x, bush2Positions[i].z);
+		modelosCollider.at("Bush2").model.setPosition(bush2Positions[i]);
+		modelosCollider.at("Bush2").model.setOrientation(glm::vec3(0, bush2Orientations[i], 0));
+		modelosCollider.at("Bush2").model.render();
 	}
 
 	// Bancas
 	for (int i = 0; i < benchPositions.size(); i++) {
 		benchPositions[i].y = terrain.getHeightTerrain(benchPositions[i].x, benchPositions[i].z);
-		glm::mat4 posBench = glm::translate(modelos.at("Bench").transform, benchPositions[i]);
-		posBench = glm::scale(posBench, modelos.at("Bench").modelScale);
-		posBench = glm::rotate(posBench, glm::radians(benchOrientations[i]), glm::vec3(0, 1, 0));
-		modelos.at("Bench").model.render(posBench);
+		modelosCollider.at("Bench").model.setPosition(benchPositions[i]);
+		modelosCollider.at("Bench").model.setOrientation(glm::vec3(0, benchOrientations[i], 0));
+		modelosCollider.at("Bench").model.render();
 	}
 
 	// Arboles
 	for (int i = 0; i < treePositions.size(); i++) {
 		treePositions[i].y = terrain.getHeightTerrain(treePositions[i].x, treePositions[i].z);
-		glm::mat4 posTree = glm::translate(modelos.at("Bench").transform, treePositions[i]);
-		posTree = glm::scale(posTree, modelos.at("Bench").modelScale);
-		modelos.at("Tree").model.render(posTree);
-	}
+		modelosCollider.at("Tree").model.setPosition(treePositions[i]);
+		modelosCollider.at("Tree").model.setScale(modelos.at("Tree").modelScale);
+		modelosCollider.at("Tree").model.render();
+	}*/
 }
 
 void SetUpColisionMeshes() {
@@ -1054,7 +1052,7 @@ void SetUpColisionMeshes() {
 	AbstractModel::SBB sbbCollider;
 	// Agregar los arreglos de los modelos que necesitan colliders
 	std::vector<std::vector<glm::vec3>> colisiones = { bush1Positions, bush2Positions, bushBorderPositions, bush1WallPositions, bush2WallPositions,
-		benchPositions,	treePositions, cherryPosition, peraPosition, pinAppPosition, sandiaPosition };
+		benchPositions,	treePositions,  }; //cherryPosition, peraPosition, pinAppPosition, sandiaPosition
 	int jt; // iterador del vector con las posiisones de los modelos (colisiones)
 	for (it = modelos.begin(); it != modelos.end(); it++) {
 		if (it->second.active) {
